@@ -127,8 +127,9 @@ def mcp_binary():
 
 
 def check_mcp(workdir, env):
+    # Inherit stderr: an unread PIPE can fill and block the server, especially on Windows.
     proc = subprocess.Popen([str(mcp_binary()), '--stdio'], cwd=workdir, env=env,
-                            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                            stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
     # Windows select() cannot watch subprocess pipes; a reader thread works on all runners.
     replies = queue.Queue()
 
@@ -201,17 +202,17 @@ def check_mcp(workdir, env):
             proc.wait()
         reader.join(timeout=5)
         proc.stdout.close()
-        proc.stderr.close()
 
 
 
 def check_http(workdir, env):
+    # Keep server logs flowing to CI rather than buffering them in an unread pipe.
     with socket.socket() as listener:
         listener.bind(('127.0.0.1', 0))
         port = listener.getsockname()[1]
     proc = subprocess.Popen([str(mcp_binary()), '--http', f'127.0.0.1:{port}'],
                             cwd=workdir, env={**env, 'PLINE_MCP_ALLOWED_HOSTS': ''},
-                            stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+                            stdout=subprocess.DEVNULL)
     session_id = None
 
     def request(method, payload=None, key='smoke-dummy-key', path='/mcp', headers=None):
@@ -315,7 +316,6 @@ def check_http(workdir, env):
         except subprocess.TimeoutExpired:
             proc.kill()
             proc.wait()
-        proc.stderr.close()
 
 
 def main():
