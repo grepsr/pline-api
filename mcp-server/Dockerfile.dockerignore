@@ -1,0 +1,14 @@
+# Rust build output (rebuilt in-image)
+target/
+
+# Docs that are not embedded into the binary (docs/ is, and is copied explicitly)
+README.md
+
+# Docker / editor / OS
+Dockerfile*
+.dockerignore
+.DS_Store
+*.log
+.git/
+.env
+.env.*

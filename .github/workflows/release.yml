@@ -1,0 +1,141 @@
+name: Build release binaries
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            target: aarch64-apple-darwin
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+          - os: windows-2022
+            target: x86_64-pc-windows-msvc
+    defaults:
+      run:
+        shell: bash
+    env:
+      BUILD_TARGET: ${{ matrix.target }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Validate version tag
+        shell: python
+        run: |
+          import os
+          from pathlib import Path
+          import tomllib
+
+          version = tomllib.loads(Path('mcp-server/Cargo.toml').read_text())['package']['version']
+          if os.environ['GITHUB_REF_TYPE'] == 'tag' and os.environ['GITHUB_REF_NAME'] != f'v{version}':
+              raise SystemExit(f'Tag must match Cargo.toml version: v{version}')
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - name: Set up Windows native build
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install nasm --yes --no-progress
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          "$env:ProgramFiles\NASM" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          "RUSTFLAGS=-C target-feature=+crt-static" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: mcp-server -> target
+          key: release-${{ matrix.target }}
+      - name: Test and build release binary
+        run: |
+          cargo test --manifest-path mcp-server/Cargo.toml --locked --release --target "$BUILD_TARGET"
+          cargo build --manifest-path mcp-server/Cargo.toml --locked --release --target "$BUILD_TARGET"
+      - name: Smoke test release binary and skill
+        run: python tests/smoke.py "mcp-server/target/$BUILD_TARGET/release/pline-mcp"
+      - name: Package binary and checksum
+        shell: python
+        run: |
+          import hashlib
+          import os
+          from pathlib import Path
+          import tarfile
+          import tomllib
+          import zipfile
+
+          target = os.environ['BUILD_TARGET']
+          version = tomllib.loads(Path('mcp-server/Cargo.toml').read_text())['package']['version']
+          windows = target.endswith('windows-msvc')
+          binary = Path('mcp-server/target') / target / 'release' / ('pline-mcp.exe' if windows else 'pline-mcp')
+          dist = Path('dist')
+          dist.mkdir(exist_ok=True)
+          archive = dist / f"pline-mcp-v{version}-{target}{'.zip' if windows else '.tar.gz'}"
+          if windows:
+              with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as package:
+                  package.write(binary, arcname=binary.name)
+          else:
+              with tarfile.open(archive, 'w:gz') as package:
+                  package.add(binary, arcname=binary.name)
+          with archive.open('rb') as stream:
+              digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+          archive.with_name(archive.name + '.sha256').write_text(
+              f'{digest}  {archive.name}\n', encoding='utf-8', newline='\n')
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pline-mcp-${{ matrix.target }}
+          path: dist/*
+          if-no-files-found: error
+          compression-level: 0
+
+  draft-release:
+    name: Prepare draft release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: pline-mcp-*
+          path: dist
+          merge-multiple: true
+      - name: Verify checksums
+        working-directory: dist
+        run: |
+          sha256sum --check *.sha256
+          cat *.sha256 > SHA256SUMS
+      - name: Create or update draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          if release_draft=$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft); then
+            if [ "$release_draft" != "true" ]; then
+              echo "Refusing to replace assets on an already published release." >&2
+              exit 1
+            fi
+            gh release upload "$RELEASE_TAG" dist/*.tar.gz dist/*.zip dist/SHA256SUMS --clobber
+          else
+            gh release create "$RELEASE_TAG" dist/*.tar.gz dist/*.zip dist/SHA256SUMS \
+              --draft --verify-tag --generate-notes --title "pline.ai $RELEASE_TAG"
+          fi

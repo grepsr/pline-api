@@ -1,0 +1,26 @@
+name: Check MCP and skill
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.10'
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: mcp-server -> target
+      - run: cargo fmt --manifest-path mcp-server/Cargo.toml -- --check
+      - run: cargo clippy --manifest-path mcp-server/Cargo.toml --locked --all-targets --all-features -- -D warnings
+      - run: cargo test --manifest-path mcp-server/Cargo.toml --locked
+      - run: cargo build --manifest-path mcp-server/Cargo.toml --locked
+      - run: python3 tests/smoke.py

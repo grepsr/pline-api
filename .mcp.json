@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "pline.ai": {
+      "command": "cargo",
+      "args": ["run", "--quiet", "--release", "--locked", "--manifest-path", "mcp-server/Cargo.toml", "--", "--stdio"],
+      "env": {
+        "PLINE_BASE_URL": "${PLINE_BASE_URL}",
+        "PLINE_API_KEY": "${PLINE_API_KEY}"
+      }
+    }
+  }
+}
