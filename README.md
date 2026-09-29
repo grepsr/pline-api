@@ -303,19 +303,19 @@ Use `--help` on any command for flags. For wire-level examples, see the skill's
 
 ## Download the MCP binary
 
-For published versions, download the matching archive and `SHA256SUMS` from
-[GitHub Releases](https://github.com/grepsr/pline-api/releases). No Rust installation is needed.
-Before the first release is published, use the source build below.
+Download a prebuilt binary from [pline.ai MCP v0.1.0](https://github.com/grepsr/pline-api/releases/tag/v0.1.0)
+using the links below. No Rust installation is needed. See
+[GitHub Releases](https://github.com/grepsr/pline-api/releases) for all versions.
 
-| Platform | Archive suffix |
+| Platform | Download |
 |---|---|
-| macOS Apple Silicon | `aarch64-apple-darwin.tar.gz` |
-| macOS Intel | `x86_64-apple-darwin.tar.gz` |
-| Linux x64, glibc 2.35+ (Ubuntu 22.04 or newer) | `x86_64-unknown-linux-gnu.tar.gz` |
-| Windows x64 | `x86_64-pc-windows-msvc.zip` |
+| macOS Apple Silicon | [pline-mcp-v0.1.0-aarch64-apple-darwin.tar.gz](https://github.com/grepsr/pline-api/releases/download/v0.1.0/pline-mcp-v0.1.0-aarch64-apple-darwin.tar.gz) |
+| macOS Intel | [pline-mcp-v0.1.0-x86_64-apple-darwin.tar.gz](https://github.com/grepsr/pline-api/releases/download/v0.1.0/pline-mcp-v0.1.0-x86_64-apple-darwin.tar.gz) |
+| Linux x64, glibc 2.35+ (Ubuntu 22.04 or newer) | [pline-mcp-v0.1.0-x86_64-unknown-linux-gnu.tar.gz](https://github.com/grepsr/pline-api/releases/download/v0.1.0/pline-mcp-v0.1.0-x86_64-unknown-linux-gnu.tar.gz) |
+| Windows x64 | [pline-mcp-v0.1.0-x86_64-pc-windows-msvc.zip](https://github.com/grepsr/pline-api/releases/download/v0.1.0/pline-mcp-v0.1.0-x86_64-pc-windows-msvc.zip) |
 
-Archives are named `pline-mcp-vVERSION-TARGET.tar.gz` (or `.zip` on Windows).
-Compare the archive's SHA-256 hash with its line in `SHA256SUMS`: use `shasum -a 256 FILE`
+Download [SHA256SUMS](https://github.com/grepsr/pline-api/releases/download/v0.1.0/SHA256SUMS)
+and compare the archive's SHA-256 hash with its line in that file: use `shasum -a 256 FILE`
 on macOS, `sha256sum FILE` on Linux, or `Get-FileHash FILE -Algorithm SHA256` in PowerShell.
 Extract the archive into a permanent folder and use the executable's absolute path in the MCP
 configuration below. Windows uses `pline-mcp.exe`; macOS and Linux use `pline-mcp`.
