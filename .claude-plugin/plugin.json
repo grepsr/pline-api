@@ -1,0 +1,55 @@
+{
+  "name": "pline-ai",
+  "displayName": "pline.ai",
+  "version": "0.2.0",
+  "description": "Scrape, crawl, batch-scrape, map, and search the web through the hosted pline.ai API: an agent skill plus the pline-mcp MCP server (runs via npx, no Rust needed).",
+  "author": {
+    "name": "Grepsr",
+    "email": "dev@grepsr.com",
+    "url": "https://github.com/grepsr"
+  },
+  "homepage": "https://pline.ai",
+  "repository": "https://github.com/grepsr/pline-api",
+  "license": "MIT",
+  "documentationUrl": "https://github.com/grepsr/pline-api#readme",
+  "supportUrl": "https://github.com/grepsr/pline-api/issues",
+  "privacyPolicyUrl": "https://www.pline.ai/privacy-policy",
+  "termsOfServiceUrl": "https://www.pline.ai/terms-of-service",
+  "keywords": [
+    "scraping",
+    "crawling",
+    "web-search",
+    "data-extraction",
+    "pline",
+    "mcp"
+  ],
+  "mcpServers": {
+    "pline.ai": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "pline-mcp@0.2.0"
+      ],
+      "env": {
+        "PLINE_BASE_URL": "${user_config.pline_base_url}",
+        "PLINE_API_KEY": "${user_config.pline_api_key}"
+      }
+    }
+  },
+  "userConfig": {
+    "pline_base_url": {
+      "type": "string",
+      "title": "pline.ai API base URL",
+      "description": "Public HTTPS base URL of the pline.ai API supplied by the service operator.",
+      "default": "https://apix.pline.ai/v1",
+      "required": true
+    },
+    "pline_api_key": {
+      "type": "string",
+      "title": "pline.ai API key",
+      "description": "Your own pline.ai API key. Stored in secure storage and sent to the API as x-api-key.",
+      "sensitive": true,
+      "required": true
+    }
+  }
+}

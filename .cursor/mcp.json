@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "pline.ai": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "pline-mcp"
+      ],
+      "env": {
+        "PLINE_BASE_URL": "${env:PLINE_BASE_URL}",
+        "PLINE_API_KEY": "${env:PLINE_API_KEY}"
+      }
+    }
+  }
+}

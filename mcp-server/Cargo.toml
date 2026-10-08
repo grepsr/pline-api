@@ -1,8 +1,9 @@
 [package]
 name = "pline-mcp"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 repository = "https://github.com/grepsr/pline-api"
+license = "MIT"
 description = "MCP server exposing the pline.ai scrape, crawl, batch, map, and search API."
 
 # Standalone MCP crate; the Python skill does not require Cargo.

@@ -1,0 +1,27 @@
+{
+  "name": "pline-ai",
+  "owner": {
+    "name": "Grepsr",
+    "email": "dev@grepsr.com"
+  },
+  "metadata": {
+    "description": "pline.ai web scraping, crawling, mapping, and search for coding agents.",
+    "pluginRoot": "./"
+  },
+  "plugins": [
+    {
+      "name": "pline-ai",
+      "source": "./",
+      "description": "Scrape, crawl, batch-scrape, map, and search the web through the hosted pline.ai API: an agent skill plus a local MCP server.",
+      "version": "0.2.0",
+      "category": "productivity",
+      "tags": [
+        "scraping",
+        "crawling",
+        "web-search",
+        "data-extraction"
+      ],
+      "license": "MIT"
+    }
+  ]
+}

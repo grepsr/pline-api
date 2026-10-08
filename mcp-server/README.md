@@ -10,6 +10,32 @@ Your MCP client → local MCP process (stdio) → hosted pline.ai API (HTTPS)
 The scraping backend stays on the service operator's infrastructure. You do not need to run the
 orchestrator, browser fetcher, Redis, or Temporal locally.
 
+## Run with npx
+
+The server is published to npm as [`pline-mcp`](https://www.npmjs.com/package/pline-mcp): a small
+launcher that selects the prebuilt binary for your platform (macOS arm64/x64, Linux x64/arm64,
+Windows x64) from an optional dependency, falling back to a checksum-verified download from the
+GitHub Release. Node.js 18+ is the only requirement:
+
+```json
+{
+  "mcpServers": {
+    "pline.ai": {
+      "command": "npx",
+      "args": ["-y", "pline-mcp"],
+      "env": {
+        "PLINE_BASE_URL": "https://api.example.com/v1",
+        "PLINE_API_KEY": "your-own-api-key"
+      }
+    }
+  }
+}
+```
+
+Arguments pass straight through to the binary (`npx -y pline-mcp --http 127.0.0.1:8080`), and
+`PLINE_MCP_BINARY=/path/to/pline-mcp` makes the launcher run a build of your own. The launcher
+source is in [`../npm`](../npm); per-platform packages are named `pline-mcp-<os>-<cpu>`.
+
 ## Install a prebuilt binary
 
 Use the platform downloads and checksum instructions in the
@@ -17,10 +43,43 @@ Use the platform downloads and checksum instructions in the
 `pline-mcp.exe` on Windows) and configure your MCP client with its absolute path below.
 You do not need Rust, Cargo, or a repository checkout for a prebuilt installation.
 
+## Run the Docker image
+
+Each release is also published as a multi-platform image at
+`ghcr.io/grepsr/pline-mcp` (linux/amd64 and linux/arm64), which is the package the
+[MCP Registry](https://registry.modelcontextprotocol.io) entry `io.github.grepsr/pline-mcp` points at.
+With Docker installed, an MCP client can run the server over stdio without downloading a binary:
+
+```json
+{
+  "mcpServers": {
+    "pline.ai": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "-e", "PLINE_BASE_URL", "-e", "PLINE_API_KEY",
+               "ghcr.io/grepsr/pline-mcp:0.2.0", "--stdio"],
+      "env": {
+        "PLINE_BASE_URL": "https://api.example.com/v1",
+        "PLINE_API_KEY": "your-own-api-key"
+      }
+    }
+  }
+}
+```
+
+`-e NAME` without a value forwards the variable from the client-provided environment into the
+container, so the key never appears on the command line. The image runs as an unprivileged user and
+has no access to your filesystem, so `save_dir` and `download_dir` are unavailable unless you mount a
+volume. Pin the tag to a release version; `latest` moves. The same image serves Streamable HTTP when
+started without `--stdio`:
+
+```sh
+docker run --rm -p 8080:8080 -e PLINE_BASE_URL=https://api.example.com/v1 ghcr.io/grepsr/pline-mcp:0.2.0
+```
+
 ## Build from Git
 
 You need Git, a current stable Rust toolchain with Cargo, an API key, and the public HTTPS API base
-URL supplied by the service operator. `https://api.example.com` below is a placeholder.
+URL supplied by the service operator. `https://api.example.com/v1` below is a placeholder.
 
 From the repository root:
 
@@ -58,7 +117,7 @@ URL, and key with your own values. On Windows the binary has an `.exe` suffix.
       "command": "/absolute/path/to/pline-mcp",
       "args": ["--stdio"],
       "env": {
-        "PLINE_BASE_URL": "https://api.example.com",
+        "PLINE_BASE_URL": "https://api.example.com/v1",
         "PLINE_API_KEY": "your-own-api-key"
       }
     }
@@ -116,25 +175,49 @@ Read `pline://guide` for usage guidance and `pline://reference` for the API fiel
 The documents are also available in [docs/guide.md](docs/guide.md) and
 [docs/reference.md](docs/reference.md).
 
+## Hosted OAuth connection
+
+The remote MCP endpoint can use Pline sign-in instead of asking every agent user to paste an API
+key. After sign-in, each user selects a workspace and an active API key. Follow
+[`docs/oauth-hosting.md`](docs/oauth-hosting.md) to configure the Pline web app and host.
+
 ## Configuration
 
 The executable is `pline-mcp`; its public MCP identity is `pline.ai`.
 Set `PLINE_BASE_URL` and `PLINE_API_KEY` for local stdio use.
 For HTTP mode, `PLINE_MCP_HTTP_ADDR` sets the listener address and
-`PLINE_MCP_ALLOWED_HOSTS` accepts a comma-separated list of allowed hosts.
+`PLINE_MCP_ALLOWED_HOSTS` accepts a comma-separated list of allowed hosts. OAuth mode also uses
+`PLINE_PLATFORM_BASE_URL` (Pline web app origin), `PLINE_SUPABASE_URL` (Supabase project origin),
+and `PLINE_MCP_PUBLIC_URL` (public MCP origin).
+
+## Where this server is listed
+
+The server is published to the official MCP Registry as `io.github.grepsr/pline-mcp` with the npm
+package and the GHCR image above as its packages, and the repository root is installable as a Claude
+Code plugin (`pline-ai`) that runs the npm package. The root [`.cursor/mcp.json`](../.cursor/mcp.json)
+and [`.vscode/mcp.json`](../.vscode/mcp.json) configure `npx -y pline-mcp` for Cursor and VS Code
+workspaces. [PUBLISHING.md](../PUBLISHING.md) describes how each listing is produced and kept current.
 
 ## HTTP mode
 
 The binary also supports Streamable HTTP, for example for local transport development:
 
 ```sh
-PLINE_BASE_URL=https://api.example.com \
+PLINE_BASE_URL=https://api.example.com/v1 \
   ./mcp-server/target/release/pline-mcp --http 127.0.0.1:8080
 ```
 
 `/health` reports liveness. `/mcp` accepts the caller's API key through `Authorization: Bearer` or
 `x-api-key`; the legacy `/<key>/mcp` route also exists, but puts credentials in URLs and access logs.
-The server forwards each caller's key rather than using the stdio environment key.
+The server forwards each caller's key rather than using the stdio environment key. A Supabase OAuth
+access token is also accepted when the platform and OAuth environment variables are configured. The
+user selects an active workspace API key in Pline's OAuth consent screen, and the server resolves it
+for each request through the authenticated Pline platform. The MCP process does not keep a shared API
+key.
+
+Configure Supabase OAuth 2.1 with dynamic client registration enabled and `/oauth/consent` as its
+authorization UI path. Apply the platform migration
+`supabase/migrations/20261008000000_mcp_connections.sql` before enabling the hosted endpoint.
 
 HTTP transport is stateless: no `Mcp-Session-Id` is issued, and standalone GET streams and DELETE
 session requests return 405. Each POST uses its own API key; remembered scrape sessions remain
