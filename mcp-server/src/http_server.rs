@@ -16,7 +16,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use axum::extract::{Path, Request};
-use axum::http::{header, StatusCode};
+use axum::http::{header, HeaderValue, StatusCode};
 use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
@@ -32,15 +32,76 @@ use crate::PlineServer;
 #[derive(Clone, Debug)]
 pub struct ApiKey(pub String);
 
+fn is_jwt(token: &str) -> bool {
+    let mut parts = token.split('.');
+    matches!((parts.next(), parts.next(), parts.next(), parts.next()),
+        (Some(a), Some(b), Some(c), None) if !a.is_empty() && !b.is_empty() && !c.is_empty())
+}
+
+async fn resolve_oauth_key(token: &str) -> Result<String, (StatusCode, String)> {
+    let base = std::env::var("PLINE_PLATFORM_BASE_URL").map_err(|_| {
+        (
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Pline OAuth is not configured".into(),
+        )
+    })?;
+    let url = format!("{}/api/mcp/credential", base.trim_end_matches('/'));
+    let response = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .build()
+        .map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Could not create credential client".into(),
+            )
+        })?
+        .get(url)
+        .bearer_auth(token)
+        .send()
+        .await
+        .map_err(|_| {
+            (
+                StatusCode::BAD_GATEWAY,
+                "Could not resolve the Pline API key".into(),
+            )
+        })?;
+    let status = response.status();
+    let body: serde_json::Value = response.json().await.map_err(|_| {
+        (
+            StatusCode::BAD_GATEWAY,
+            "Pline credential service returned an invalid response".into(),
+        )
+    })?;
+    if !status.is_success() {
+        let code = if status.as_u16() == 409 {
+            StatusCode::CONFLICT
+        } else {
+            StatusCode::UNAUTHORIZED
+        };
+        let detail = body
+            .get("message")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("Pline account authorization failed");
+        return Err((code, detail.to_string()));
+    }
+    body.get("apiKey")
+        .and_then(serde_json::Value::as_str)
+        .filter(|key| !key.is_empty())
+        .map(ToString::to_string)
+        .ok_or((
+            StatusCode::BAD_GATEWAY,
+            "Pline credential service returned no API key".into(),
+        ))
+}
+
 fn header_key(request: &Request) -> Option<String> {
     let bearer = request
         .headers()
         .get(header::AUTHORIZATION)
         .and_then(|value| value.to_str().ok())
         .and_then(|value| {
-            value
-                .strip_prefix("Bearer ")
-                .or_else(|| value.strip_prefix("bearer "))
+            let (scheme, token) = value.split_once(' ')?;
+            scheme.eq_ignore_ascii_case("Bearer").then_some(token)
         })
         .map(str::trim)
         .filter(|value| !value.is_empty());
@@ -61,7 +122,24 @@ async fn require_api_key(
     mut request: Request,
     next: Next,
 ) -> Response {
-    let key = header_key(&request).or_else(|| {
+    let header_key = header_key(&request);
+    let key = match header_key.as_deref() {
+        Some(token) if request.headers().contains_key(header::AUTHORIZATION) && is_jwt(token) => {
+            match resolve_oauth_key(token).await {
+                Ok(key) => Some(key),
+                Err((status, detail)) => {
+                    let response = (status, Json(json!({"detail": detail}))).into_response();
+                    return if status == StatusCode::UNAUTHORIZED {
+                        with_oauth_challenge(response)
+                    } else {
+                        response
+                    };
+                }
+            }
+        }
+        _ => header_key,
+    }
+    .or_else(|| {
         params
             .get("api_key")
             .map(|value| value.trim())
@@ -73,15 +151,50 @@ async fn require_api_key(
             request.extensions_mut().insert(ApiKey(key));
             next.run(request).await
         }
-        None => (
-            StatusCode::UNAUTHORIZED,
-            Json(json!({
-                "detail": "missing pline.ai API key: send `Authorization: Bearer <key>` or `x-api-key`, \
-                           or connect to /<key>/mcp"
-            })),
-        )
-            .into_response(),
+        None => {
+            let response = (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({
+                    "detail": "missing pline.ai API key: send `Authorization: Bearer <key>` or `x-api-key`"
+                })),
+            )
+                .into_response();
+            with_oauth_challenge(response)
+        }
     }
+}
+
+fn with_oauth_challenge(mut response: Response) -> Response {
+    if let Ok(public_url) = std::env::var("PLINE_MCP_PUBLIC_URL") {
+        if let Ok(value) = HeaderValue::from_str(&format!(
+            "Bearer resource_metadata=\"{}/.well-known/oauth-protected-resource/mcp\"",
+            public_url.trim_end_matches('/')
+        )) {
+            response
+                .headers_mut()
+                .insert(header::WWW_AUTHENTICATE, value);
+        }
+    }
+    response
+}
+
+async fn oauth_resource_metadata() -> Response {
+    let public_url = std::env::var("PLINE_MCP_PUBLIC_URL").unwrap_or_default();
+    let supabase_url = std::env::var("PLINE_SUPABASE_URL").unwrap_or_default();
+    if public_url.is_empty() || supabase_url.is_empty() {
+        return (
+            StatusCode::NOT_FOUND,
+            Json(json!({"detail": "OAuth is not configured"})),
+        )
+            .into_response();
+    }
+    Json(json!({
+        "resource": format!("{}/mcp", public_url.trim_end_matches('/')),
+        "authorization_servers": [format!("{}/auth/v1", supabase_url.trim_end_matches('/'))],
+        "scopes_supported": ["openid", "email", "profile"],
+        "bearer_methods_supported": ["header"]
+    }))
+    .into_response()
 }
 
 async fn health() -> impl IntoResponse {
@@ -147,6 +260,10 @@ pub async fn serve(mut server: PlineServer, addr: &str) -> anyhow::Result<()> {
         .route_service("/mcp", mcp.clone())
         .route_service("/{api_key}/mcp", mcp)
         .layer(middleware::from_fn(require_api_key))
+        .route(
+            "/.well-known/oauth-protected-resource/mcp",
+            get(oauth_resource_metadata),
+        )
         .route("/health", get(health));
     let listener = tokio::net::TcpListener::bind(addr).await?;
     tracing::info!(%addr, "pline.ai MCP listening (Streamable HTTP at /mcp and /<api-key>/mcp)");

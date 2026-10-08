@@ -18,7 +18,7 @@ jobs:
           components: rustfmt, clippy
       - uses: actions/setup-python@v6
         with:
-          python-version: '3.10'
+          python-version: '3.11'
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: mcp-server -> target
@@ -27,3 +27,21 @@ jobs:
       - run: cargo test --manifest-path mcp-server/Cargo.toml --locked
       - run: cargo build --manifest-path mcp-server/Cargo.toml --locked
       - run: python3 tests/smoke.py
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 'lts/*'
+      - name: Smoke test the npm launcher against the local build
+        env:
+          PLINE_MCP_BINARY: ${{ github.workspace }}/mcp-server/target/debug/pline-mcp
+        run: |
+          node --check npm/bin/pline-mcp.js
+          node npm/bin/pline-mcp.js --help
+          python3 tests/smoke.py npm/bin/pline-mcp.js
+          python3 npm/build-platform-packages.py --check
+          (cd npm && npm pack --dry-run)
+      - name: Check published metadata
+        run: |
+          python3 tests/check_versions.py
+          python3 -c 'import json, sys; [json.load(open(p)) for p in sys.argv[1:]]; print("JSON OK:", *sys.argv[1:])' \
+            server.json glama.json .mcp.json .cursor/mcp.json .vscode/mcp.json \
+            .claude-plugin/plugin.json .claude-plugin/marketplace.json npm/package.json

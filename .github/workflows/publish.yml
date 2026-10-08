@@ -1,0 +1,192 @@
+name: Publish release
+
+# Runs when a GitHub Release is published (release.yml creates it as a draft; a maintainer
+# publishes it). Two stages, in order:
+#
+#   npm       Builds the five platform packages from the release archives and publishes them plus
+#             the `pline-mcp` launcher to npm. Auth: npm trusted publishing (GitHub OIDC) once each
+#             package has a trusted publisher configured on npmjs.com for this workflow file;
+#             until then, an NPM_TOKEN secret on the npm-publish environment (granular token with
+#             publish rights and 2FA bypass).
+#   registry  Publishes server.json to the official MCP Registry with GitHub OIDC. No secrets.
+#             The registry validates that the npm package carries the matching mcpName and that the
+#             GHCR image carries the matching label, so both artifacts must already be public.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Published release tag to (re)publish, for example v0.1.0
+        required: true
+        type: string
+      skip_npm:
+        description: Skip the npm stage (use when the packages are already published)
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+env:
+  RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+  IMAGE: ghcr.io/${{ github.repository_owner }}/pline-mcp
+
+jobs:
+  npm:
+    name: Publish npm packages
+    if: ${{ !inputs.skip_npm }}
+    runs-on: ubuntu-24.04
+    # Holds NPM_TOKEN while it is needed and is the environment name configured on each package's
+    # npm trusted publisher. Restrict it to v* tags and add a required reviewer in repo settings.
+    environment: npm-publish
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v5
+        with:
+          # npm 11.5.1+ is required for trusted publishing; Node 24 ships a recent npm.
+          node-version: '24'
+          registry-url: https://registry.npmjs.org
+      - name: Check versions match the release tag
+        run: python3 tests/check_versions.py --tag "$RELEASE_TAG"
+      - name: Download release archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --dir dist \
+            --pattern '*.tar.gz' --pattern '*.zip' --pattern SHA256SUMS
+          ls -l dist
+      - name: Assemble platform packages
+        run: python3 npm/build-platform-packages.py --dist dist --out npm/dist
+      - name: Publish to npm
+        env:
+          # Empty when trusted publishing is configured; setup-node reads NODE_AUTH_TOKEN.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          npm --version
+          version="${RELEASE_TAG#v}"
+          flags=(--access public)
+          if [ "$(gh api "repos/$GITHUB_REPOSITORY" --jq .private)" = "false" ]; then
+            flags+=(--provenance)
+          else
+            echo "::warning::Repository is private: publishing without provenance attestations."
+          fi
+          publish() {
+            local dir="$1" name
+            name=$(node -p "require('./$dir/package.json').name")
+            if npm view "$name@$version" version >/dev/null 2>&1; then
+              echo "$name@$version is already on npm; skipping"
+              return
+            fi
+            echo "Publishing $name@$version"
+            (cd "$dir" && npm publish "${flags[@]}")
+          }
+          for dir in npm/dist/*/; do publish "${dir%/}"; done
+          publish npm
+      - name: Confirm npx can run the published package
+        env:
+          PLINE_BASE_URL: https://api.example.invalid
+          PLINE_API_KEY: ci-placeholder
+        run: |
+          set -euo pipefail
+          version="${RELEASE_TAG#v}"
+          for attempt in 1 2 3 4 5 6; do
+            if npm view "pline-mcp@$version" version >/dev/null 2>&1 && \
+               npm view "pline-mcp-linux-x64@$version" version >/dev/null 2>&1; then
+              break
+            fi
+            sleep 20
+          done
+          npx -y "pline-mcp@$version" --help
+
+  registry:
+    name: Publish to MCP Registry
+    needs: npm
+    # Run even when the npm stage was skipped on purpose, but not when it failed.
+    if: ${{ always() && (needs.npm.result == 'success' || needs.npm.result == 'skipped') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Check versions match the release tag
+        run: python3 tests/check_versions.py --tag "$RELEASE_TAG"
+      - name: Confirm the npm package is public and carries mcpName
+        run: |
+          set -euo pipefail
+          version="${RELEASE_TAG#v}"
+          expected=$(python3 -c 'import json; print(json.load(open("server.json"))["name"])')
+          actual=$(npm view "pline-mcp@$version" mcpName 2>/dev/null || true)
+          if [ "$actual" != "$expected" ]; then
+            echo "::error::npm pline-mcp@$version has mcpName '$actual', expected '$expected'. Publish the npm stage first." >&2
+            exit 1
+          fi
+      - name: Confirm the image is public and carries the registry label
+        run: |
+          set -euo pipefail
+          version="${RELEASE_TAG#v}"
+          expected=$(python3 -c 'import json; print(json.load(open("server.json"))["name"])')
+          # Deliberately unauthenticated: the registry and end users pull anonymously.
+          if ! docker pull --quiet "$IMAGE:$version"; then
+            echo "::error::$IMAGE:$version is not publicly pullable. Push it with the release workflow and set the GHCR package visibility to public." >&2
+            exit 1
+          fi
+          actual=$(docker inspect --format '{{ index .Config.Labels "io.modelcontextprotocol.server.name" }}' "$IMAGE:$version")
+          if [ "$actual" != "$expected" ]; then
+            echo "::error::Image label io.modelcontextprotocol.server.name is '$actual', expected '$expected'." >&2
+            exit 1
+          fi
+      - name: Install mcp-publisher
+        run: |
+          set -euo pipefail
+          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+          ./mcp-publisher --help
+      - name: Validate server.json
+        run: ./mcp-publisher validate
+      - name: Authenticate to the MCP Registry
+        run: ./mcp-publisher login github-oidc
+      - name: Publish
+        run: ./mcp-publisher publish
+      - name: Confirm the registry lists this version
+        run: |
+          set -euo pipefail
+          name=$(python3 -c 'import json; print(json.load(open("server.json"))["name"])')
+          version="${RELEASE_TAG#v}"
+          for attempt in 1 2 3 4 5 6; do
+            if curl -fsS "https://registry.modelcontextprotocol.io/v0.1/servers?search=$name" | python3 -c '
+          import json, sys
+          name, version = sys.argv[1], sys.argv[2]
+          servers = json.load(sys.stdin).get("servers", [])
+          hits = [s for s in servers if (s.get("server") or s).get("name") == name and (s.get("server") or s).get("version") == version]
+          sys.exit(0 if hits else 1)
+          ' "$name" "$version"; then
+              echo "Registry lists $name@$version"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::warning::Registry search did not return $name@$version yet; check https://registry.modelcontextprotocol.io/v0.1/servers?search=$name"
