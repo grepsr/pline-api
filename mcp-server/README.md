@@ -216,8 +216,8 @@ for each request through the authenticated Pline platform. The MCP process does 
 key.
 
 Configure Supabase OAuth 2.1 with dynamic client registration enabled and `/oauth/consent` as its
-authorization UI path. Apply the platform migration
-`supabase/migrations/20261008000000_mcp_connections.sql` before enabling the hosted endpoint.
+authorization UI path. Apply API service migrations with `uv run alembic upgrade head` from the
+`pline-hades-api-service` repository before enabling the hosted endpoint.
 
 HTTP transport is stateless: no `Mcp-Session-Id` is issued, and standalone GET streams and DELETE
 session requests return 405. Each POST uses its own API key; remembered scrape sessions remain

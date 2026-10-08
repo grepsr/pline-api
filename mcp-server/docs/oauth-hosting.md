@@ -7,8 +7,8 @@ deployment has no shared Pline API key.
 
 ## Configure the Pline web app
 
-1. Apply `supabase/migrations/20261008000000_mcp_connections.sql` from the
-   `pline-hades-api-platform` repository to the production Supabase database.
+1. Apply API service migrations with `uv run alembic upgrade head` from the
+   `pline-hades-api-service` repository to the production Supabase database.
 2. In Supabase Authentication → OAuth Server, enable the OAuth 2.1 server and dynamic client
    registration. Set the authorization UI path to `/oauth/consent`.
 3. Set the Supabase Site URL to the public Pline app origin and allow its OAuth callback/redirect
@@ -53,7 +53,7 @@ key fails through the normal Pline API key validation.
 ## Production rollout
 
 1. Apply the `pline-mcp` ECR repository change in `pline-hades-infra`.
-2. Apply the Supabase migration and enable OAuth server plus dynamic registration.
+2. Apply API service migrations and enable OAuth server plus dynamic registration.
 3. Release the updated `pline-hades-api-platform` with the consent and credential routes.
 4. Publish the Pline MCP `v0.2.0` release, then run **Deploy Pline MCP to production** with that tag
    to build and push the image into ECR.
