@@ -35,8 +35,8 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: ${{ vars.AWS_DEFAULT_REGION }}
-          role-to-assume: ${{ vars.AWS_GREPSR_OIDC_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+          role-to-assume: ${{ secrets.AWS_GREPSR_OIDC_ROLE_ARN }}
 
       - name: Log in to Amazon ECR
         id: ecr-login
