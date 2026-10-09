@@ -18,3 +18,9 @@ updates:
     directory: /npm
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: pline-mcp-darwin-arm64
+      - dependency-name: pline-mcp-darwin-x64
+      - dependency-name: pline-mcp-linux-arm64
+      - dependency-name: pline-mcp-linux-x64
+      - dependency-name: pline-mcp-win32-x64

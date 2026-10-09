@@ -11,7 +11,7 @@ use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::{
     CallToolResult, ContentBlock, ErrorData, Extensions, Implementation, ListResourcesResult,
     PaginatedRequestParams, ReadResourceRequestParams, ReadResourceResponse, ReadResourceResult,
-    Resource, ResourceContents, ServerCapabilities, ServerInfo,
+    Resource, ResourceContents, ServerCapabilities, ServerConfig,
 };
 use rmcp::service::RequestContext;
 use rmcp::{tool, tool_handler, tool_router, RoleServer, ServerHandler, ServiceExt};
@@ -1033,7 +1033,7 @@ impl PlineServer {
 
 #[tool_handler]
 impl ServerHandler for PlineServer {
-    fn get_info(&self) -> ServerInfo {
+    fn get_info(&self) -> ServerConfig {
         let mut implementation = Implementation::from_build_env();
         implementation.name = "pline.ai".to_string();
         implementation.title = Some("pline.ai".to_string());
@@ -1041,7 +1041,7 @@ impl ServerHandler for PlineServer {
         implementation.description = Some(
             "Scrape, crawl, batch-scrape, map, and search the web through pline.ai.".to_string(),
         );
-        ServerInfo::new(
+        ServerConfig::new(
             ServerCapabilities::builder()
                 .enable_tools()
                 .enable_resources()
