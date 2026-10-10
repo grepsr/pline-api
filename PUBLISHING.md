@@ -61,7 +61,9 @@ adopted. GitHub OIDC tokens need no such care: they exist only for the duration 
      publicly pullable with the right label, validates `server.json`, logs in with GitHub OIDC, and
      publishes `io.github.grepsr/pline-api`.
    Re-run it from the Actions tab with the tag as input if it needs repeating; tick **skip_npm** to
-   republish only the registry entry.
+   republish only the registry entry. If the registry rejects the tag's `server.json`, fix it on
+   `main` and set **server_ref** to `main`: the registry stage then reads `server.json` from that ref
+   (its versions must still match the tag) without a new release.
 
 The README's one-click Cursor and VS Code buttons run `npx -y pline-api` unpinned, so they do not
 change between releases. Regenerate them only if the command or environment variables change:

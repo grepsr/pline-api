@@ -64,9 +64,11 @@ def set_version(new):
     server = load_json('server.json')
     server['version'] = new
     for package in server.get('packages', []):
-        package['version'] = new
+        # The registry rejects a separate version on OCI packages; the tag in identifier carries it.
         if package.get('registryType') == 'oci':
             package['identifier'] = f'{IMAGE}:{new}'
+        else:
+            package['version'] = new
     dump_json('server.json', server)
 
     npm = load_json('npm/package.json')
@@ -119,9 +121,14 @@ def check(tag):
     for name, pinned in npm.get('optionalDependencies', {}).items():
         expect(f'npm/package.json optionalDependencies[{name}]', pinned)
     for index, package in enumerate(server.get('packages', [])):
-        expect(f'server.json packages[{index}].version', package.get('version'))
         if package.get('registryType') == 'oci':
+            # The registry rejects registryBaseUrl and version on OCI packages.
+            for field in ('registryBaseUrl', 'version'):
+                if field in package:
+                    problems.append(f'server.json packages[{index}] is OCI and must not set {field}')
             expect(f'server.json packages[{index}].identifier', package.get('identifier'), f'{IMAGE}:{version}')
+        else:
+            expect(f'server.json packages[{index}].version', package.get('version'))
         if package.get('registryType') == 'npm':
             expect(f'server.json packages[{index}].identifier', package.get('identifier'), npm['name'])
 
