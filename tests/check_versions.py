@@ -107,6 +107,19 @@ def check(tag):
         if actual != wanted:
             problems.append(f'{label}: {actual!r} != {wanted!r}')
 
+    def check_install_target(label, config):
+        # A one-click link must run this repository's npm package or image, never a stale or
+        # unclaimed name that someone else could publish.
+        args = config.get('args', [])
+        if config.get('command') == 'npx':
+            if not any(arg == NPM or arg.startswith(f'{NPM}@') for arg in args):
+                problems.append(f'{label} runs npx {args!r}, expected the {NPM} package')
+        elif config.get('command') == 'docker':
+            if not any(arg.startswith(f'{IMAGE}:') for arg in args):
+                problems.append(f'{label} runs docker {args!r}, expected the {IMAGE} image')
+        else:
+            problems.append(f'{label} runs {config.get("command")!r}, expected npx or docker')
+
     if tag:
         expect('release tag', tag, f'v{version}')
 
@@ -157,13 +170,17 @@ def check(tag):
         for found in re.findall(r'pline-mcp-v([0-9]+\.[0-9]+\.[0-9]+)-', text):
             expect(f'{readme} release archive name', found)
         for encoded in re.findall(r'cursor://anysphere\.cursor-deeplink/mcp/install\?name=[^&]+&config=([A-Za-z0-9+/=_-]+)', text):
-            config = json.dumps(json.loads(base64.b64decode(encoded + '=' * (-len(encoded) % 4))))
+            parsed = json.loads(base64.b64decode(encoded + '=' * (-len(encoded) % 4)))
+            check_install_target(f'{readme} Cursor install link', parsed)
+            config = json.dumps(parsed)
             for found in re.findall(re.escape(IMAGE) + r':([^"\s]+)', config):
                 expect(f'{readme} Cursor install link image tag', found)
             for found in re.findall(r'"' + re.escape(NPM) + r'@([^"]+)"', config):
                 expect(f'{readme} Cursor install link npm pin', found)
         for encoded in re.findall(r'vscode(?:-insiders)?:mcp/install\?(\S+?)\)', text):
-            config = json.dumps(json.loads(unquote(encoded)))
+            parsed = json.loads(unquote(encoded))
+            check_install_target(f'{readme} VS Code install link', parsed)
+            config = json.dumps(parsed)
             for found in re.findall(re.escape(IMAGE) + r':([^"\s]+)', config):
                 expect(f'{readme} VS Code install link image tag', found)
             for found in re.findall(r'"' + re.escape(NPM) + r'@([^"]+)"', config):

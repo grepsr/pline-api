@@ -170,7 +170,26 @@ plugin bundle gives one set of tools to people who install both.
   `PLINE_BASE_URL`/`PLINE_API_KEY` from the environment, VS Code prompts for them (the key is masked).
 - The README carries one-click **Add to Cursor** and **Install in VS Code** buttons with the same
   command, so users need Node.js but not Rust or Docker.
-- Cursor has no submission form; its marketplace reads community indices and the official registry.
+- Listings (checked October 2026): the `cursor/mcp-servers` repository is archived. Cursor staff
+  recommend the community directory [cursor.directory](https://cursor.directory) for most
+  publishers; the curated [Cursor Marketplace](https://cursor.com/marketplace/publish) takes a form,
+  reviews manually, and replies by email. Nothing indicates Cursor ingests the official registry.
+- VS Code's MCP gallery (`@mcp` in the Extensions view) is GitHub's curated
+  [MCP Registry](https://github.com/mcp). Being in the official registry is the prerequisite; ask
+  for inclusion by emailing partnerships@github.com until self-publication opens.
+
+## 4a. Codex and ChatGPT
+
+- **Codex** (CLI, IDE extension, app) reads `~/.codex/config.toml`; the README's
+  [Codex MCP section](README.md#codex-1) gives `codex mcp add` and an `env_vars` variant that keeps
+  the key out of the file. `npx skills add grepsr/pline-api -a codex` installs the skill.
+- `codex plugin marketplace add grepsr/pline-api` reads `.claude-plugin/marketplace.json`, but Codex
+  passes the plugin's `${user_config.*}` placeholders to the server literally, so the bundled server
+  does not work there. A Codex-native plugin needs a root `plugin.json` and `mcp.json` (Agent Plugins
+  format), and that format has no documented way to forward a user's API key to a stdio server.
+- **ChatGPT** and the shared OpenAI plugin directory (platform.openai.com/plugins) accept only a
+  remote HTTPS MCP endpoint with OAuth 2.1 or no auth; API-key headers and local stdio servers are
+  not supported. Same prerequisite as the Claude directory's MCP connector below.
 
 ## 5. Skill distribution (`npx skills add`)
 
@@ -201,13 +220,15 @@ by a maintainer; none are automated here.
 
 ### punkpeye/awesome-mcp-servers (pull request)
 
-Fork, add the line under **🔎 Search & Data Extraction** (or **📂 Browser Automation**, where other
+Its CI labels a PR `missing-glama` until the server is listed and passing on Glama, so finish
+[Glama](#6-glama) first and include the score badge after the link. Fork, add the line under
+**🔎 Search & Data Extraction** (or **📂 Browser Automation**, where other
 scrape/crawl/map servers appear) keeping alphabetical order by repository, and open a PR titled
 `Add grepsr/pline-api`. The legend markers: 🎖️ official, 🦀 Rust, ☁️ cloud service (the scraping
 runs on pline.ai), and the three OS badges because the server runs on all three.
 
 ```markdown
-- [grepsr/pline-api](https://github.com/grepsr/pline-api) 🎖️ 🦀 ☁️ 🍎 🪟 🐧 - Scrape, batch-scrape, crawl, map and search the web through the pline.ai API, returning Markdown, HTML, screenshots or structured JSON with session reuse and background jobs.
+- [grepsr/pline-api](https://github.com/grepsr/pline-api) [![grepsr/pline-api MCP server](https://glama.ai/mcp/servers/grepsr/pline-api/badges/score.svg)](https://glama.ai/mcp/servers/grepsr/pline-api) 🎖️ 🦀 ☁️ 🍎 🪟 🐧 - Scrape, batch-scrape, crawl, map and search the web through the pline.ai API, returning Markdown, HTML, screenshots or structured JSON with session reuse and background jobs.
 ```
 
 Typical turnaround is a few days to two weeks.
@@ -220,19 +241,14 @@ name `pline.ai`, category **Web Scraping**, the one-sentence description above, 
 connections unchecked (until a hosted endpoint exists), and a contact email. The free tier reviews
 within about two weeks.
 
-### modelcontextprotocol/servers (pull request)
+### modelcontextprotocol/servers
 
-The official repository's README lists third-party servers under **🎖️ Official Integrations** for
-servers maintained by the company that owns the service. Add one alphabetical line in the same
-format as the others:
-
-```markdown
-- <img height="12" width="12" src="https://pline.ai/favicon.ico" alt="pline.ai Logo" /> **[pline.ai](https://github.com/grepsr/pline-api)** - Scrape, crawl, map, batch-scrape and search the web through the pline.ai API, with Markdown, HTML, screenshot and structured JSON output.
-```
+No longer lists third-party servers: its README keeps only reference servers and points to the
+official registry, and CONTRIBUTING.md accepts issues, not pull requests. The registry entry covers it.
 
 ### PulseMCP
 
-Submissions are paused (September 2026) while PulseMCP rebuilds its pipeline; it ingests the official
+Submissions are still paused (checked October 2026) while PulseMCP rebuilds its pipeline; it ingests the official
 registry automatically when they resume, so the registry publish above covers it.
 
 ## Status checklist
@@ -245,8 +261,13 @@ registry automatically when they resume, so the registry publish above covers it
 | Claude directory, plugin bundle | `.claude-plugin/` | Yes | Submit at claude.ai/directory/manage |
 | Claude directory, MCP connector | Hosted `/mcp` with OAuth | No | Needs a hosted endpoint and OAuth |
 | Cursor / VS Code | Workspace configs + README buttons | Yes | None |
+| Cursor directory listings | cursor.directory / Cursor Marketplace form | No | Submit the forms |
+| VS Code gallery (GitHub MCP Registry) | Curated from the official registry | No | Email partnerships@github.com |
+| Codex | README `codex mcp add` / `config.toml` | Yes | None |
+| ChatGPT, OpenAI plugin directory | Remote HTTPS MCP with OAuth | No | Needs a hosted endpoint and OAuth |
 | Skill via `npx skills add` | `skills/pline-api/` + marketplace.json | Yes | Make the repo public |
 | Glama | `glama.json` + auto-index | Yes | Claim the listing after going public |
-| awesome-mcp-servers | PR | Entry drafted above | Open the PR |
+| awesome-mcp-servers | PR | Entry drafted above | List on Glama, then open the PR |
 | mcpservers.org | Form | Values drafted above | Submit the form |
-| modelcontextprotocol/servers | PR | Entry drafted above | Open the PR |
+| modelcontextprotocol/servers | Registry only | Covered by the registry | None |
+| PulseMCP | Ingests the registry | Covered by the registry | None while submissions are paused |
