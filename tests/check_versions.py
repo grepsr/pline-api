@@ -169,7 +169,10 @@ def check(tag):
             expect(f'{readme} release link', found)
         for found in re.findall(r'pline-mcp-v([0-9]+\.[0-9]+\.[0-9]+)-', text):
             expect(f'{readme} release archive name', found)
-        for encoded in re.findall(r'cursor://anysphere\.cursor-deeplink/mcp/install\?name=[^&]+&config=([A-Za-z0-9+/=_-]+)', text):
+        # GitHub strips non-http(s) link targets, so a cursor:// deeplink renders as a dead button.
+        if 'cursor://' in text:
+            problems.append(f'{readme} uses a cursor:// link; GitHub strips it, use https://cursor.com/install-mcp')
+        for encoded in re.findall(r'https://cursor\.com/(?:en/)?install-mcp\?name=[^&]+&config=([A-Za-z0-9+/=_-]+)', text):
             parsed = json.loads(base64.b64decode(encoded + '=' * (-len(encoded) % 4)))
             check_install_target(f'{readme} Cursor install link', parsed)
             config = json.dumps(parsed)
