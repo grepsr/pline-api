@@ -13,7 +13,7 @@
       "name": "pline-ai",
       "source": "./",
       "description": "Scrape, crawl, batch-scrape, map, and search the web through the hosted pline.ai API: an agent skill plus a local MCP server.",
-      "version": "0.3.2",
+      "version": "0.3.3",
       "category": "productivity",
       "tags": [
         "scraping",

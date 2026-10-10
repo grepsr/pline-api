@@ -1,6 +1,6 @@
 {
   "name": "pline-api",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "MCP server for pline.ai: scrape, crawl, batch-scrape, map, and search the web. Run with `npx -y pline-api`.",
   "mcpName": "io.github.grepsr/pline-api",
   "license": "MIT",
@@ -34,11 +34,11 @@
     "ai-agents"
   ],
   "optionalDependencies": {
-    "@pline/api-darwin-arm64": "0.3.2",
-    "@pline/api-darwin-x64": "0.3.2",
-    "@pline/api-linux-x64": "0.3.2",
-    "@pline/api-linux-arm64": "0.3.2",
-    "@pline/api-win32-x64": "0.3.2"
+    "@pline/api-darwin-arm64": "0.3.3",
+    "@pline/api-darwin-x64": "0.3.3",
+    "@pline/api-linux-x64": "0.3.3",
+    "@pline/api-linux-arm64": "0.3.3",
+    "@pline/api-win32-x64": "0.3.3"
   },
   "publishConfig": {
     "access": "public"

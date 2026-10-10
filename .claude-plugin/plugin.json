@@ -1,7 +1,7 @@
 {
   "name": "pline-ai",
   "displayName": "pline.ai",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Scrape, crawl, batch-scrape, map, and search the web through the hosted pline.ai API: an agent skill plus the pline-mcp MCP server (runs via npx, no Rust needed).",
   "author": {
     "name": "Grepsr",
@@ -28,7 +28,7 @@
       "command": "npx",
       "args": [
         "-y",
-        "pline-api@0.3.2"
+        "pline-api@0.3.3"
       ],
       "env": {
         "PLINE_BASE_URL": "${user_config.pline_base_url}",
