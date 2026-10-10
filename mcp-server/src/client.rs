@@ -19,6 +19,7 @@ pub const SCRAPE_OUTPUTS: &[&str] = &[
     "clean_html",
     "links",
     "markdown",
+    "clean_markdown",
     "screenshot",
     "screenshot_full_page",
     "json",
@@ -243,6 +244,27 @@ pub fn build_scrape_options(options: ScrapeOptions<'_>) -> Result<Map<String, Va
         }
         body.insert("body".into(), payload.clone());
     }
+    if let Some(timeout) = options.timeout {
+        if !(1_000..=60_000).contains(&timeout) {
+            return Err(invalid(
+                "timeout must be between 1000 and 60000 milliseconds",
+            ));
+        }
+        body.insert("timeout".into(), json!(timeout));
+    }
+    if let Some(selector) = options
+        .wait_selector
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        body.insert("wait_selector".into(), json!(selector));
+    }
+    if let Some(wait_ms) = options.wait_ms {
+        if wait_ms > 60_000 {
+            return Err(invalid("wait_ms must be between 0 and 60000 milliseconds"));
+        }
+        body.insert("wait_ms".into(), json!(wait_ms));
+    }
     if let Some(js_render) = options.js_render {
         body.insert("js_render".into(), json!(js_render));
     }
@@ -291,10 +313,15 @@ pub fn build_scrape_options(options: ScrapeOptions<'_>) -> Result<Map<String, Va
     {
         return Err(invalid("output json requires prompt and/or schema"));
     }
-    let browser_needed = actions.is_some() || outputs.iter().any(|o| o.starts_with("screenshot"));
+    let browser_needed = actions.is_some()
+        || options
+            .wait_selector
+            .is_some_and(|selector| !selector.trim().is_empty())
+        || options.wait_ms.is_some_and(|wait_ms| wait_ms > 0)
+        || outputs.iter().any(|o| o.starts_with("screenshot"));
     if options.js_render == Some(false) && browser_needed {
         return Err(invalid(
-            "js_render=false cannot be combined with actions or screenshot output; they need a browser",
+            "js_render=false cannot be combined with actions, wait options, or screenshot output; they need a browser",
         ));
     }
     if browser_needed && method != "GET" {

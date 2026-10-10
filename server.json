@@ -1,6 +1,6 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.grepsr/pline-mcp",
+  "name": "io.github.grepsr/pline-api",
   "title": "pline.ai",
   "description": "Scrape, crawl, batch-scrape, map, and search the web through the hosted pline.ai API.",
   "websiteUrl": "https://github.com/grepsr/pline-api#readme",
@@ -14,7 +14,7 @@
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
-      "identifier": "pline-mcp",
+      "identifier": "pline-api",
       "version": "0.2.0",
       "runtimeHint": "npx",
       "transport": {

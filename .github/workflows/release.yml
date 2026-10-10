@@ -37,8 +37,8 @@ jobs:
     env:
       BUILD_TARGET: ${{ matrix.target }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Validate version tag and published metadata
@@ -125,13 +125,13 @@ jobs:
     env:
       IMAGE: ghcr.io/${{ github.repository_owner }}/pline-mcp
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Derive an artifact-safe platform name
         env:
           PLATFORM: ${{ matrix.platform }}
         run: echo "PLATFORM_PAIR=${PLATFORM//\//-}" >> "$GITHUB_ENV"
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
         if: github.ref_type == 'tag'
         with:
           registry: ghcr.io
@@ -139,7 +139,7 @@ jobs:
           password: ${{ github.token }}
       - name: Build (and push by digest on a tag)
         id: build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: mcp-server
           platforms: ${{ matrix.platform }}
@@ -177,21 +177,21 @@ jobs:
     env:
       IMAGE: ghcr.io/${{ github.repository_owner }}/pline-mcp
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8
         with:
           pattern: digests-*
           path: /tmp/digests
           merge-multiple: true
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ github.token }}
       - name: Compute image tags
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.IMAGE }}
           tags: |

@@ -28,7 +28,7 @@
       "command": "npx",
       "args": [
         "-y",
-        "pline-mcp@0.2.0"
+        "pline-api@0.2.0"
       ],
       "env": {
         "PLINE_BASE_URL": "${user_config.pline_base_url}",

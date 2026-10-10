@@ -1,7 +1,7 @@
 """Assemble the per-platform npm packages (pline-mcp-<os>-<cpu>) from release archives.
 
 Each package carries one prebuilt binary under bin/ and declares os/cpu so npm installs only the
-matching one through the optionalDependencies of the main `pline-mcp` package.
+matching one through the optionalDependencies of the main `pline-api` package.
 
     python3 npm/build-platform-packages.py --dist dist --out npm/dist
     python3 npm/build-platform-packages.py --check   # print the platform table, build nothing
@@ -94,8 +94,8 @@ def build(dist, out):
             manifest['license'] = MAIN['license']
         (package_dir / 'package.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
         (package_dir / 'README.md').write_text(
-            f'# {name}\n\nPrebuilt `{exe}` ({target}) for the [pline-mcp](https://www.npmjs.com/package/pline-mcp) '
-            f'MCP server, version {version}. npm selects this package automatically; install `pline-mcp` '
+            f'# {name}\n\nPrebuilt `{exe}` ({target}) for the [pline-api launcher](https://www.npmjs.com/package/pline-api) '
+            f'MCP server, version {version}. npm selects this package automatically; install `pline-api` '
             f'rather than this package directly.\n',
             encoding='utf-8')
         built.append(package_dir)
@@ -111,7 +111,7 @@ def main():
     args = parser.parse_args()
 
     if args.check or not args.dist:
-        print(f'pline-mcp {MAIN["version"]} platform packages:')
+        print(f'pline-api {MAIN["version"]} platform packages:')
         for name, node_os, cpu, target, ext in PLATFORMS:
             pinned = MAIN['optionalDependencies'].get(name)
             print(f'  {name:26} {node_os:7} {cpu:6} {target:28} .{ext}  optionalDependency={pinned}')

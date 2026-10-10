@@ -23,7 +23,7 @@ from urllib.parse import unquote
 
 ROOT = Path(__file__).resolve().parents[1]
 IMAGE = 'ghcr.io/grepsr/pline-mcp'
-NPM = 'pline-mcp'
+NPM = 'pline-api'
 READMES = ('README.md', 'mcp-server/README.md')
 SEMVER = r'[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?'
 

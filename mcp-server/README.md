@@ -12,7 +12,7 @@ orchestrator, browser fetcher, Redis, or Temporal locally.
 
 ## Run with npx
 
-The server is published to npm as [`pline-mcp`](https://www.npmjs.com/package/pline-mcp): a small
+The server is published to npm as [`pline-api`](https://www.npmjs.com/package/pline-api): a small
 launcher that selects the prebuilt binary for your platform (macOS arm64/x64, Linux x64/arm64,
 Windows x64) from an optional dependency, falling back to a checksum-verified download from the
 GitHub Release. Node.js 18+ is the only requirement:
@@ -22,7 +22,7 @@ GitHub Release. Node.js 18+ is the only requirement:
   "mcpServers": {
     "pline.ai": {
       "command": "npx",
-      "args": ["-y", "pline-mcp"],
+      "args": ["-y", "pline-api"],
       "env": {
         "PLINE_BASE_URL": "https://api.example.com/v1",
         "PLINE_API_KEY": "your-own-api-key"
@@ -32,7 +32,7 @@ GitHub Release. Node.js 18+ is the only requirement:
 }
 ```
 
-Arguments pass straight through to the binary (`npx -y pline-mcp --http 127.0.0.1:8080`), and
+Arguments pass straight through to the binary (`npx -y pline-api --http 127.0.0.1:8080`), and
 `PLINE_MCP_BINARY=/path/to/pline-mcp` makes the launcher run a build of your own. The launcher
 source is in [`../npm`](../npm); per-platform packages are named `pline-mcp-<os>-<cpu>`.
 
@@ -47,7 +47,7 @@ You do not need Rust, Cargo, or a repository checkout for a prebuilt installatio
 
 Each release is also published as a multi-platform image at
 `ghcr.io/grepsr/pline-mcp` (linux/amd64 and linux/arm64), which is the package the
-[MCP Registry](https://registry.modelcontextprotocol.io) entry `io.github.grepsr/pline-mcp` points at.
+[MCP Registry](https://registry.modelcontextprotocol.io) entry `io.github.grepsr/pline-api` points at.
 With Docker installed, an MCP client can run the server over stdio without downloading a binary:
 
 ```json
@@ -192,10 +192,10 @@ and `PLINE_MCP_PUBLIC_URL` (public MCP origin).
 
 ## Where this server is listed
 
-The server is published to the official MCP Registry as `io.github.grepsr/pline-mcp` with the npm
+The server is published to the official MCP Registry as `io.github.grepsr/pline-api` with the npm
 package and the GHCR image above as its packages, and the repository root is installable as a Claude
 Code plugin (`pline-ai`) that runs the npm package. The root [`.cursor/mcp.json`](../.cursor/mcp.json)
-and [`.vscode/mcp.json`](../.vscode/mcp.json) configure `npx -y pline-mcp` for Cursor and VS Code
+and [`.vscode/mcp.json`](../.vscode/mcp.json) configure `npx -y pline-api` for Cursor and VS Code
 workspaces. [PUBLISHING.md](../PUBLISHING.md) describes how each listing is produced and kept current.
 
 ## HTTP mode

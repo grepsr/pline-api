@@ -5,7 +5,7 @@
       "command": "npx",
       "args": [
         "-y",
-        "pline-mcp"
+        "pline-api"
       ],
       "env": {
         "PLINE_BASE_URL": "${env:PLINE_BASE_URL}",

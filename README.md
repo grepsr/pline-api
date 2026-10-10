@@ -6,7 +6,7 @@ API key and call the same hosted scraping API. The scraping backend is not part 
 | Integration | Contents | Requirements |
 |---|---|---|
 | [pline-api skill](skills/pline-api/SKILL.md) | Agent instructions, API reference, Python CLI for scrape, batch, crawl, map, and search | Python 3.10+; no pip dependencies |
-| [MCP server](mcp-server/README.md) | Ten tools over local stdio; embedded usage guide and API reference | `npx -y pline-mcp` (Node.js 18+); also a Docker image, prebuilt binaries, or a Cargo source build |
+| [MCP server](mcp-server/README.md) | Ten tools over local stdio; embedded usage guide and API reference | `npx -y pline-api` (Node.js 18+); also a Docker image, prebuilt binaries, or a Cargo source build |
 
 For remote agents, the MCP server also supports Streamable HTTP with Pline OAuth. Users sign in,
 choose a workspace API key, and connect at the hosted `/mcp` URL; see
@@ -18,12 +18,12 @@ Both integrations install with `npx` and need only Node.js 18+ (or Docker, see b
 
 ```sh
 npx skills add grepsr/pline-api          # the agent skill, into Claude Code, Cursor, Codex, and more
-npx -y pline-mcp                         # the MCP server (your MCP client runs this for you)
+npx -y pline-api                         # the MCP server (your MCP client runs this for you)
 ```
 
-The MCP server is the [`pline-mcp`](https://www.npmjs.com/package/pline-mcp) npm package, listed in the
-[official MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.grepsr/pline-mcp)
-as `io.github.grepsr/pline-mcp`, and also shipped as the `ghcr.io/grepsr/pline-mcp` image.
+The MCP server is the [`pline-api`](https://www.npmjs.com/package/pline-api) npm package, listed in the
+[official MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.grepsr/pline-api)
+as `io.github.grepsr/pline-api`, and also shipped as the `ghcr.io/grepsr/pline-mcp` image.
 Every MCP client takes the same configuration:
 
 ```json
@@ -31,7 +31,7 @@ Every MCP client takes the same configuration:
   "mcpServers": {
     "pline.ai": {
       "command": "npx",
-      "args": ["-y", "pline-mcp"],
+      "args": ["-y", "pline-api"],
       "env": {
         "PLINE_BASE_URL": "https://api.example.com/v1",
         "PLINE_API_KEY": "your-own-api-key"
@@ -43,10 +43,10 @@ Every MCP client takes the same configuration:
 
 | Client | One step |
 |---|---|
-| Claude Code | `claude mcp add pline.ai -e PLINE_BASE_URL=https://api.example.com/v1 -e PLINE_API_KEY=your-own-api-key -- npx -y pline-mcp` |
+| Claude Code | `claude mcp add pline.ai -e PLINE_BASE_URL=https://api.example.com/v1 -e PLINE_API_KEY=your-own-api-key -- npx -y pline-api` |
 | Claude Code plugin (skill + server) | `claude plugin marketplace add grepsr/pline-api` then `claude plugin install pline-ai@pline-ai`; Claude Code prompts for the URL and key |
 | Cursor | [![Add pline.ai to Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](cursor://anysphere.cursor-deeplink/mcp/install?name=pline.ai&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsInBsaW5lLW1jcCJdLCJlbnYiOnsiUExJTkVfQkFTRV9VUkwiOiJodHRwczovL2FwaS5wbGluZS5haSIsIlBMSU5FX0FQSV9LRVkiOiJ5b3VyLW93bi1hcGkta2V5In19) then replace `your-own-api-key` in Cursor's MCP settings |
-| VS Code | [![Install pline.ai in VS Code](https://img.shields.io/badge/VS_Code-Install_Server-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://vscode.dev/redirect?url=vscode:mcp/install?%7B%22name%22%3A%22pline.ai%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22pline-mcp%22%5D%2C%22env%22%3A%7B%22PLINE_BASE_URL%22%3A%22%24%7Binput%3Apline-base-url%7D%22%2C%22PLINE_API_KEY%22%3A%22%24%7Binput%3Apline-api-key%7D%22%7D%2C%22inputs%22%3A%5B%7B%22id%22%3A%22pline-base-url%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22pline.ai%20API%20base%20URL%22%2C%22default%22%3A%22https%3A%2F%2Fapix.pline.ai%2Fv1%22%7D%2C%7B%22id%22%3A%22pline-api-key%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22pline.ai%20API%20key%22%2C%22password%22%3Atrue%7D%5D%7D) [![Install pline.ai in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install_Server-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect?url=vscode-insiders:mcp/install?%7B%22name%22%3A%22pline.ai%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22pline-mcp%22%5D%2C%22env%22%3A%7B%22PLINE_BASE_URL%22%3A%22%24%7Binput%3Apline-base-url%7D%22%2C%22PLINE_API_KEY%22%3A%22%24%7Binput%3Apline-api-key%7D%22%7D%2C%22inputs%22%3A%5B%7B%22id%22%3A%22pline-base-url%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22pline.ai%20API%20base%20URL%22%2C%22default%22%3A%22https%3A%2F%2Fapix.pline.ai%2Fv1%22%7D%2C%7B%22id%22%3A%22pline-api-key%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22pline.ai%20API%20key%22%2C%22password%22%3Atrue%7D%5D%7D); VS Code prompts for the URL and key |
+| VS Code | [![Install pline.ai in VS Code](https://img.shields.io/badge/VS_Code-Install_Server-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://vscode.dev/redirect?url=vscode:mcp/install?%7B%22name%22%3A%22pline.ai%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22pline-api%22%5D%2C%22env%22%3A%7B%22PLINE_BASE_URL%22%3A%22%24%7Binput%3Apline-base-url%7D%22%2C%22PLINE_API_KEY%22%3A%22%24%7Binput%3Apline-api-key%7D%22%7D%2C%22inputs%22%3A%5B%7B%22id%22%3A%22pline-base-url%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22pline.ai%20API%20base%20URL%22%2C%22default%22%3A%22https%3A%2F%2Fapix.pline.ai%2Fv1%22%7D%2C%7B%22id%22%3A%22pline-api-key%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22pline.ai%20API%20key%22%2C%22password%22%3Atrue%7D%5D%7D) [![Install pline.ai in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install_Server-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect?url=vscode-insiders:mcp/install?%7B%22name%22%3A%22pline.ai%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22pline-api%22%5D%2C%22env%22%3A%7B%22PLINE_BASE_URL%22%3A%22%24%7Binput%3Apline-base-url%7D%22%2C%22PLINE_API_KEY%22%3A%22%24%7Binput%3Apline-api-key%7D%22%7D%2C%22inputs%22%3A%5B%7B%22id%22%3A%22pline-base-url%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22pline.ai%20API%20base%20URL%22%2C%22default%22%3A%22https%3A%2F%2Fapix.pline.ai%2Fv1%22%7D%2C%7B%22id%22%3A%22pline-api-key%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22pline.ai%20API%20key%22%2C%22password%22%3Atrue%7D%5D%7D); VS Code prompts for the URL and key |
 | Windsurf, Claude Desktop, Codex, others | Paste the JSON above into the client's MCP configuration; see [MCP setup](#mcp-setup) for each file's location |
 
 Opening this repository as a workspace configures the server automatically through
@@ -389,8 +389,8 @@ configuration below. Windows uses `pline-mcp.exe`; macOS and Linux use `pline-mc
 ## MCP setup
 
 The server runs locally as a stdio process that your MCP client starts; it calls the hosted
-pline.ai API over HTTPS with your key. `npx -y pline-mcp` downloads the
-[`pline-mcp`](https://www.npmjs.com/package/pline-mcp) launcher, which picks the prebuilt binary for
+pline.ai API over HTTPS with your key. `npx -y pline-api` downloads the
+[`pline-api`](https://www.npmjs.com/package/pline-api) launcher, which picks the prebuilt binary for
 your platform (macOS arm64/x64, Linux x64/arm64, Windows x64). Node.js 18 or newer is the only
 requirement. Replace `https://api.example.com/v1` with the public API URL from the service operator
 and keep real keys in the client's local settings, never in a committed file.
@@ -405,7 +405,7 @@ Add new global MCP server** and paste:
   "mcpServers": {
     "pline.ai": {
       "command": "npx",
-      "args": ["-y", "pline-mcp"],
+      "args": ["-y", "pline-api"],
       "env": {
         "PLINE_BASE_URL": "https://api.example.com/v1",
         "PLINE_API_KEY": "your-own-api-key"
@@ -417,7 +417,7 @@ Add new global MCP server** and paste:
 
 Project-level configuration lives in `.cursor/mcp.json`; this repository ships one that reads the two
 variables from Cursor's environment. On Windows, if `npx` is not found, use
-`"command": "cmd", "args": ["/c", "npx", "-y", "pline-mcp"]`.
+`"command": "cmd", "args": ["/c", "npx", "-y", "pline-api"]`.
 
 ### Windsurf
 
@@ -439,7 +439,7 @@ and masks the key:
     "pline.ai": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "pline-mcp"],
+      "args": ["-y", "pline-api"],
       "env": {
         "PLINE_BASE_URL": "${input:pline-base-url}",
         "PLINE_API_KEY": "${input:pline-api-key}"
@@ -457,7 +457,7 @@ Developer → Edit Config**) and restart Claude Desktop.
 ### Claude Code
 
 ```sh
-claude mcp add pline.ai -e PLINE_BASE_URL=https://api.example.com/v1 -e PLINE_API_KEY=your-own-api-key -- npx -y pline-mcp
+claude mcp add pline.ai -e PLINE_BASE_URL=https://api.example.com/v1 -e PLINE_API_KEY=your-own-api-key -- npx -y pline-api
 ```
 
 Or install the skill and the server together as the `pline-ai` plugin (Claude Code prompts for the
@@ -477,7 +477,7 @@ Add to `~/.codex/config.toml`:
 ```toml
 [mcp_servers.pline]
 command = "npx"
-args = ["-y", "pline-mcp"]
+args = ["-y", "pline-api"]
 env = { PLINE_BASE_URL = "https://api.example.com/v1", PLINE_API_KEY = "your-own-api-key" }
 ```
 
@@ -518,12 +518,12 @@ cargo build --manifest-path mcp-server/Cargo.toml --release --locked
 ```
 
 The executable is `pline-mcp`; its public MCP identity is `pline.ai`. Streamable HTTP mode is
-`npx -y pline-mcp --http 127.0.0.1:8080`; see [HTTP mode](mcp-server/README.md#http-mode).
+`npx -y pline-api --http 127.0.0.1:8080`; see [HTTP mode](mcp-server/README.md#http-mode).
 
 ## Update and verify
 
-`npx -y pline-mcp` resolves the latest published version on each start, so npm installs need no
-action; pin `pline-mcp@<version>` in the client configuration if you want to control upgrades.
+`npx -y pline-api` resolves the latest published version on each start, so npm installs need no
+action; pin `pline-api@<version>` in the client configuration if you want to control upgrades.
 For a prebuilt installation, download the new release, verify its checksum, and replace the
 installed executable. Reconnect your MCP client after updating.
 
@@ -564,7 +564,7 @@ manually. Reruns can refresh draft assets; they refuse to replace assets on an a
 release.
 
 Publishing the release triggers [Publish release](.github/workflows/publish.yml), which builds the
-per-platform npm packages from the release archives, publishes them and the `pline-mcp` launcher to
+per-platform npm packages from the release archives, publishes them and the `pline-api` launcher to
 npm, then publishes [`server.json`](server.json) to the official MCP Registry with GitHub OIDC.
 [PUBLISHING.md](PUBLISHING.md) covers that flow, the credentials involved, and the Claude directory,
 Cursor, VS Code, Glama, and community list submissions.

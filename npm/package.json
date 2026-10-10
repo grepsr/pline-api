@@ -1,11 +1,11 @@
 {
-  "name": "pline-mcp",
+  "name": "pline-api",
   "version": "0.2.0",
-  "description": "MCP server for pline.ai: scrape, crawl, batch-scrape, map, and search the web. Run with `npx -y pline-mcp`.",
-  "mcpName": "io.github.grepsr/pline-mcp",
+  "description": "MCP server for pline.ai: scrape, crawl, batch-scrape, map, and search the web. Run with `npx -y pline-api`.",
+  "mcpName": "io.github.grepsr/pline-api",
   "license": "MIT",
   "bin": {
-    "pline-mcp": "bin/pline-mcp.js"
+    "pline-api": "bin/pline-mcp.js"
   },
   "files": [
     "bin/pline-mcp.js",

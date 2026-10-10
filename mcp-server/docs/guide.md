@@ -20,7 +20,7 @@ before a crawl is a good habit: it shows what a crawl would hit, for one cheap c
 
 ## Scraping a page
 
-- `output`: `html` (default), `clean_html`, `links`, `markdown`, `screenshot`,
+- `output`: `html` (default), `clean_html`, `links`, `markdown`, `clean_markdown`, `screenshot`,
   `screenshot_full_page`, `json`, in any combination. Prefer `markdown` when the content is for
   reading or for an LLM; `html` only when markup matters.
 - `js_render` is a three-way choice. **Leave it unset** and pline.ai decides per page,
@@ -37,13 +37,15 @@ before a crawl is a good habit: it shows what a crawl would hit, for one cheap c
   list-shaped schema makes it a listing extraction and returns an array.
 - `geolocation`: fetch the page as a visitor from that country.
 - `actions`: click/type/scroll before capture. Any action implies a browser and `GET` only.
+- `timeout`: per-request deadline in milliseconds (1000-60000). `wait_selector` and `wait_ms` add
+  browser rendering waits; those controls require a browser-capable `GET` request.
 - `save_dir`: write each output to a file on the machine running the MCP server instead of
   returning it inline. Available only over stdio; HTTP rejects this option. Otherwise outputs are
   clipped at `max_chars`.
 - `request_id`: your own correlation id, echoed back as `request_id`.
 
 The response is a flat object: `data` (keyed by output: `html_body`, `clean_html`, `links`,
-`markdown`, `json`, `screenshot`, `screenshot_full_page`), `status` (the page's HTTP status),
+`markdown`, `clean_markdown`, `json`, `screenshot`, `screenshot_full_page`), `status` (the page's HTTP status),
 `final_url`, `session_id`, `request_id`, `effective_geolocation`, and `site_tier`. Quote
 `request_id` when reporting a problem to the user or the service owner.
 
@@ -78,8 +80,10 @@ each file back to its source URL. A batch uploads one JSONL file per format with
 Scope a crawl before starting it: `limit` (max pages, ≤10000), `include_paths` / `exclude_paths`
 (regex on the path), `max_discovery_depth`, `allow_subdomains`, `sitemap`. An unscoped crawl of a
 large site burns credits fast; confirm the scope with the user when the target looks big, and prefer
-`map_site` to size it up first. Both job tools accept the same `js_render`, `proxy_strategy`,
-`geolocation`, and `actions` as `scrape`, applied to every page.
+`map_site` to size it up first. Both job tools accept fetch controls such as `js_render`,
+`proxy_strategy`, `geolocation`, `timeout`, `wait_selector`, and `wait_ms`. Crawl also accepts
+`ignore_robots_txt`, webhook headers/metadata/event selection, and workflow timeout settings. Crawl
+uses the API default limit of 10000; set `limit` explicitly after sizing up a large site.
 
 ## Map and search
 
@@ -95,9 +99,8 @@ fetch each result page: best-effort, and one extra credit per page attempted.
 
 Only these five endpoints are available. How pline.ai obtains a page beyond the documented
 fields is not part of this interface. Do not speculate about it or describe it to the user. The
-levers you have are `js_render`, `proxy_strategy`, `geolocation`, `actions`, and a reused session.
-If a user asks to control request headers, timeouts, wait conditions, or the fetching method, say
-those are not exposed here.
+levers you have are `js_render`, `proxy_strategy`, `geolocation`, `actions`, timeout and wait fields,
+and a reused session. Request headers are not exposed here.
 
 ## Failures
 
