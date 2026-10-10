@@ -5,7 +5,7 @@ Exposed: POST /scrape, POST|GET|DELETE /crawl, POST|GET|DELETE /batch/scrape,
 POST /map, GET /serp.
 
 Configuration comes from the environment:
-    PLINE_BASE_URL   e.g. https://api.example.com
+    PLINE_BASE_URL   e.g. https://apix.pline.ai/v1
     PLINE_API_KEY    sent as the x-api-key header
 """
 
@@ -18,6 +18,7 @@ import sys
 import time
 import urllib.error
 import urllib.parse
+import http.client
 import urllib.request
 import uuid
 from typing import NoReturn
@@ -101,8 +102,31 @@ def die(message: str, code: int = 1) -> NoReturn:
 def base_url() -> str:
     url = os.environ.get("PLINE_BASE_URL", "").strip().rstrip("/")
     if not url:
-        die("PLINE_BASE_URL is not set (e.g. https://api.example.com)")
+        die("PLINE_BASE_URL is not set (e.g. https://apix.pline.ai/v1)")
     return url
+
+
+def _lowercase_header_names(http_class: type) -> type:
+    class Connection(http_class):
+        def putheader(self, header, *values):
+            super().putheader(header.lower(), *values)
+
+    return Connection
+
+
+class _LowercaseHTTPHandler(urllib.request.HTTPHandler):
+    def do_open(self, http_class, request, **kwargs):
+        return super().do_open(_lowercase_header_names(http_class), request, **kwargs)
+
+
+class _LowercaseHTTPSHandler(urllib.request.HTTPSHandler):
+    def do_open(self, http_class, request, **kwargs):
+        return super().do_open(_lowercase_header_names(http_class), request, **kwargs)
+
+
+# urllib title-cases header names (x-api-key becomes X-Api-Key). The API matches x-api-key
+# case-sensitively over HTTP/1.1, so send every header name in lowercase, as HTTP/2 does.
+API_OPENER = urllib.request.build_opener(_LowercaseHTTPHandler, _LowercaseHTTPSHandler)
 
 
 def api_key() -> str:
@@ -141,7 +165,7 @@ def request_api(
         url, data=data, headers=request_headers, method=method
     )
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
+        with API_OPENER.open(request, timeout=timeout) as response:
             raw = response.read().decode("utf-8", "replace")
             status = response.status
     except urllib.error.HTTPError as error:
@@ -167,7 +191,13 @@ def call(
         method, path, body=body, query=query, headers=headers, timeout=timeout
     )
     if status >= 400:
-        detail = payload.get("detail") if isinstance(payload, dict) else payload
+        detail = payload
+        if isinstance(payload, dict):
+            # The API reports errors as {"code", "message"}; some proxies use "detail".
+            if payload.get("message"):
+                detail = f"{payload.get('code') or 'ERROR'}: {payload['message']}"
+            elif payload.get("detail"):
+                detail = payload["detail"]
         die(f"{method} {path} -> HTTP {status}: {detail}")
     return payload
 

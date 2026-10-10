@@ -7,7 +7,7 @@ through the hosted pline.ai API. Each user supplies their own API key.
 Your MCP client → local MCP process (stdio) → hosted pline.ai API (HTTPS)
 ```
 
-The scraping backend stays on the service operator's infrastructure. You do not need to run the
+The scraping backend stays on pline.ai's infrastructure. You do not need to run the
 orchestrator, browser fetcher, Redis, or Temporal locally.
 
 ## Run with npx
@@ -24,7 +24,7 @@ GitHub Release. Node.js 18+ is the only requirement:
       "command": "npx",
       "args": ["-y", "pline-api"],
       "env": {
-        "PLINE_BASE_URL": "https://api.example.com/v1",
+        "PLINE_BASE_URL": "https://apix.pline.ai/v1",
         "PLINE_API_KEY": "your-own-api-key"
       }
     }
@@ -58,7 +58,7 @@ With Docker installed, an MCP client can run the server over stdio without downl
       "args": ["run", "-i", "--rm", "-e", "PLINE_BASE_URL", "-e", "PLINE_API_KEY",
                "ghcr.io/grepsr/pline-mcp:0.3.2", "--stdio"],
       "env": {
-        "PLINE_BASE_URL": "https://api.example.com/v1",
+        "PLINE_BASE_URL": "https://apix.pline.ai/v1",
         "PLINE_API_KEY": "your-own-api-key"
       }
     }
@@ -73,13 +73,13 @@ volume. Pin the tag to a release version; `latest` moves. The same image serves 
 started without `--stdio`:
 
 ```sh
-docker run --rm -p 8080:8080 -e PLINE_BASE_URL=https://api.example.com/v1 ghcr.io/grepsr/pline-mcp:0.3.2
+docker run --rm -p 8080:8080 -e PLINE_BASE_URL=https://apix.pline.ai/v1 ghcr.io/grepsr/pline-mcp:0.3.2
 ```
 
 ## Build from Git
 
 You need Git, a current stable Rust toolchain with Cargo, an API key, and the public HTTPS API base
-URL supplied by the service operator. `https://api.example.com/v1` below is a placeholder.
+URL, `https://apix.pline.ai/v1`.
 
 From the repository root:
 
@@ -102,8 +102,8 @@ These environment-loading commands are for POSIX shells. On other platforms, set
 environment variables in your shell or MCP client configuration. The server does not load `.env`
 automatically; the file is ignored by Git.
 
-Use the public HTTPS API address supplied by the service operator. Internal deployment addresses
-are not reachable from a user's machine.
+Use the public HTTPS API address, `https://apix.pline.ai/v1`. Internal deployment addresses are not reachable from
+a user's machine.
 
 ## Connect an MCP client
 
@@ -117,7 +117,7 @@ URL, and key with your own values. On Windows the binary has an `.exe` suffix.
       "command": "/absolute/path/to/pline-mcp",
       "args": ["--stdio"],
       "env": {
-        "PLINE_BASE_URL": "https://api.example.com/v1",
+        "PLINE_BASE_URL": "https://apix.pline.ai/v1",
         "PLINE_API_KEY": "your-own-api-key"
       }
     }
@@ -203,7 +203,7 @@ workspaces. [PUBLISHING.md](../PUBLISHING.md) describes how each listing is prod
 The binary also supports Streamable HTTP, for example for local transport development:
 
 ```sh
-PLINE_BASE_URL=https://api.example.com/v1 \
+PLINE_BASE_URL=https://apix.pline.ai/v1 \
   ./mcp-server/target/release/pline-mcp --http 127.0.0.1:8080
 ```
 
