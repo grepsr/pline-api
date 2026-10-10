@@ -73,7 +73,7 @@ python3 - <<'EOF'
 import base64, json
 from urllib.parse import quote
 cursor = {"command": "npx", "args": ["-y", "pline-api"], "env": {"PLINE_BASE_URL": "https://apix.pline.ai/v1", "PLINE_API_KEY": "your-own-api-key"}}
-print("cursor config:", base64.b64encode(json.dumps(cursor, separators=(",", ":")).encode()).decode())
+print("cursor link: https://cursor.com/install-mcp?name=pline.ai&config=" + base64.b64encode(json.dumps(cursor, separators=(",", ":")).encode()).decode())
 vscode = {"name": "pline.ai", "command": "npx", "args": ["-y", "pline-api"],
           "env": {"PLINE_BASE_URL": "${input:pline-base-url}", "PLINE_API_KEY": "${input:pline-api-key}"},
           "inputs": [{"id": "pline-base-url", "type": "promptString", "description": "pline.ai API base URL", "default": "https://apix.pline.ai/v1"},
