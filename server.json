@@ -39,9 +39,7 @@
     },
     {
       "registryType": "oci",
-      "registryBaseUrl": "https://ghcr.io",
       "identifier": "ghcr.io/grepsr/pline-mcp:0.3.2",
-      "version": "0.3.2",
       "runtimeHint": "docker",
       "transport": {
         "type": "stdio"
