@@ -26,6 +26,13 @@ on:
         required: false
         default: false
         type: boolean
+      server_ref:
+        description: >-
+          Branch or commit to read server.json from for the registry stage, instead of the tag
+          (use to fix registry metadata without a new release; its versions must still match the tag)
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
@@ -129,7 +136,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.release.tag_name || inputs.tag }}
+          ref: ${{ inputs.server_ref || github.event.release.tag_name || inputs.tag }}
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
