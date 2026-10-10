@@ -7,6 +7,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use futures_util::StreamExt;
+use schemars::JsonSchema;
+use serde::Deserialize;
 use serde_json::{json, Map, Value};
 use tokio::io::AsyncWriteExt;
 use tokio::sync::Mutex;
@@ -21,7 +23,14 @@ pub const SCRAPE_OUTPUTS: &[&str] = &[
     "screenshot_full_page",
     "json",
 ];
-pub const CRAWL_OUTPUTS: &[&str] = &["markdown", "html", "clean_html", "links", "screenshot"];
+pub const CRAWL_OUTPUTS: &[&str] = &[
+    "markdown",
+    "html",
+    "clean_html",
+    "links",
+    "screenshot",
+    "screenshot_full_page",
+];
 pub const SERP_OUTPUTS: &[&str] = &["html", "clean_html", "links"];
 pub const PROXY_STRATEGIES: &[&str] = &["auto", "basic", "enhanced", "premium"];
 pub const TERMINAL_JOB_STATUSES: &[&str] = &["completed", "failed", "cancelled"];
@@ -49,6 +58,22 @@ pub enum PlineError {
 }
 
 pub type Result<T> = std::result::Result<T, PlineError>;
+
+#[derive(Clone, Debug, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum TagInput {
+    One(String),
+    Many(Vec<String>),
+}
+
+impl TagInput {
+    pub fn values(&self) -> Vec<String> {
+        match self {
+            Self::One(value) => vec![value.clone()],
+            Self::Many(values) => values.clone(),
+        }
+    }
+}
 
 fn invalid(message: impl Into<String>) -> PlineError {
     PlineError::Invalid(message.into())
@@ -177,15 +202,18 @@ pub struct ScrapeOptions<'a> {
     pub proxy_strategy: Option<&'a str>,
     pub only_main_content: bool,
     pub geolocation: Option<&'a str>,
-    pub tag: Option<&'a [String]>,
+    pub tag: Option<&'a TagInput>,
     pub actions: Option<&'a [Value]>,
     pub prompt: Option<&'a str>,
     pub schema: Option<&'a Value>,
+    pub timeout: Option<u64>,
+    pub wait_selector: Option<&'a str>,
+    pub wait_ms: Option<u64>,
     pub method: &'a str,
     pub body: Option<&'a Value>,
 }
 
-/// Builds the snake_case option object for `/scrape`; `/batch/scrape` renames two keys afterwards.
+/// Builds the shared snake_case scrape options used by `/scrape` and `/batch/scrape`.
 pub fn build_scrape_options(options: ScrapeOptions<'_>) -> Result<Map<String, Value>> {
     let requested = csv_or_list(options.output);
     let outputs = validate_outputs(
@@ -218,6 +246,15 @@ pub fn build_scrape_options(options: ScrapeOptions<'_>) -> Result<Map<String, Va
     if let Some(js_render) = options.js_render {
         body.insert("js_render".into(), json!(js_render));
     }
+    if let Some(timeout) = options.timeout {
+        body.insert("timeout".into(), json!(timeout));
+    }
+    if let Some(wait_selector) = options.wait_selector {
+        body.insert("wait_selector".into(), json!(wait_selector));
+    }
+    if let Some(wait_ms) = options.wait_ms {
+        body.insert("wait_ms".into(), json!(wait_ms));
+    }
     if let Some(strategy) = validate_proxy_strategy(options.proxy_strategy)? {
         body.insert("proxy_strategy".into(), json!(strategy));
     }
@@ -227,7 +264,8 @@ pub fn build_scrape_options(options: ScrapeOptions<'_>) -> Result<Map<String, Va
     if let Some(country) = validate_country(options.geolocation, "geolocation")? {
         body.insert("geolocation".into(), json!(country));
     }
-    let tags = validate_tags(csv_or_list(options.tag))?;
+    let tag_values = options.tag.map(TagInput::values).unwrap_or_default();
+    let tags = validate_tags(csv_or_list(Some(&tag_values)))?;
     if !tags.is_empty() {
         body.insert("tag".into(), json!(tags));
     }
@@ -268,17 +306,6 @@ pub fn build_scrape_options(options: ScrapeOptions<'_>) -> Result<Map<String, Va
         ));
     }
     Ok(body)
-}
-
-/// `/batch/scrape` spells two fields in camelCase; everything else matches `/scrape`.
-pub fn to_batch_casing(mut options: Map<String, Value>) -> Map<String, Value> {
-    if let Some(value) = options.remove("js_render") {
-        options.insert("jsRender".into(), value);
-    }
-    if let Some(value) = options.remove("proxy_strategy") {
-        options.insert("proxyStrategy".into(), value);
-    }
-    options
 }
 
 /// Remembers the session id pline.ai returned per (tenant, host) and serializes requests per
@@ -619,6 +646,9 @@ mod tests {
             actions: None,
             prompt: None,
             schema: None,
+            timeout: None,
+            wait_selector: None,
+            wait_ms: None,
             method: "GET",
             body: None,
         }
@@ -656,7 +686,7 @@ mod tests {
     }
 
     #[test]
-    fn batch_casing_renames_only_two_keys() {
+    fn batch_scrape_keeps_shared_scrape_option_names() {
         let outputs = vec!["markdown".to_string()];
         let body = build_scrape_options(ScrapeOptions {
             output: Some(&outputs),
@@ -666,11 +696,9 @@ mod tests {
             ..base_options()
         })
         .unwrap();
-        let batch = to_batch_casing(body);
-        assert_eq!(batch["jsRender"], json!(true));
-        assert_eq!(batch["proxyStrategy"], json!("basic"));
-        assert_eq!(batch["geolocation"], json!("US"));
-        assert!(!batch.contains_key("js_render"));
+        assert_eq!(body["js_render"], json!(true));
+        assert_eq!(body["proxy_strategy"], json!("basic"));
+        assert_eq!(body["geolocation"], json!("US"));
     }
 
     #[test]

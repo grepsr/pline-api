@@ -4,19 +4,19 @@ Base URL: `$PLINE_BASE_URL`. Auth header on every request: `x-api-key: $PLINE_AP
 Optional `x-request-id` header: echoed back as `request_id` on `/scrape`; generated when absent.
 Errors are always `{"detail": "<message>"}` with a matching HTTP status.
 
-Casing is not uniform across endpoints, and unknown or mis-cased keys are rejected with `422`
+Casing follows the API request models, and unknown or mis-cased keys are rejected with `422`
 rather than silently ignored:
 
 | Endpoint | Body casing |
 |---|---|
 | `POST /scrape` | snake_case |
 | `POST /map` | camelCase |
-| `POST /crawl` | camelCase (except `output.clean_html`; the nested `scrape` object is snake_case) |
-| `POST /batch/scrape` | camelCase (`jsRender`, `proxyStrategy`), except `only_main_content`, `session_id`, `schema` |
+| `POST /crawl` | camelCase fields; `output` is a list of format names and nested `scrape` fields are snake_case |
+| `POST /batch/scrape` | batch-only fields are camelCase; shared scrape options are snake_case (legacy camelCase aliases are accepted) |
 | `GET /serp` | snake_case query params |
 
-Only the fields listed in this document are part of the interface. Request headers, timeouts,
-wait conditions, and the fetching method are not caller-controlled.
+Only the fields listed in this document are part of the interface. Request headers and service-level
+retry settings are not caller-controlled.
 
 ---
 
@@ -39,6 +39,9 @@ Synchronous. Returns `200` with the page, or an error status. Server-side budget
 | `session_id` | string | generated | alias `session`; see Sessions |
 | `tag` | string \| string[] | `[]` | ≤25 tags, 1–25 chars each, `[A-Za-z0-9._-]` |
 | `actions` | object[] | `[]` | see Actions; any action implies a browser |
+| `timeout` | int | — | milliseconds, 1000–60000 |
+| `wait_selector` | string | — | CSS selector to wait for in browser mode |
+| `wait_ms` | int | — | extra browser settle wait, 0–60000 ms |
 | `prompt` | string | — | ≤16384 chars, for `output: ["json"]` |
 | `schema` | object | — | ≤65536 bytes, lenient shape (not strict JSON Schema) |
 
@@ -167,15 +170,16 @@ Link-following crawl. Runs in the background, survives restarts, returns `202` i
 | `ignoreQueryParameters` | bool | `false` | drop URLs with query strings |
 | `crawlEntireDomain` | bool | `false` | leave the seed path |
 | `allowSubdomains` | bool | `false` | include subdomains |
-| `output` | object | `{markdown:true}` | `markdown`, `html`, `clean_html`, `links`, `screenshot` booleans; at least one must be true |
+| `output` | string[] | `["markdown"]` | `markdown`, `html`, `clean_html`, `links`, `screenshot`, `screenshot_full_page`; at least one format is required |
 | `email` | string | — | notification address, validated |
 | `webhook` | object | — | `{url, headers, metadata, events}`; `events` ⊆ `started`,`page`,`completed`,`failed` (empty = all) |
 | `scrape` | object | `{}` | per-page fetch options, snake_case, see below (alias `scrapeOptions`) |
 | `scheduleToCloseTimeoutSecs` | int | `86400` | |
 | `heartbeatTimeoutSecs` | int | `30` | |
 
-`scrape` is forwarded to each page fetch and accepts these `POST /scrape` fields with the same
-meaning: `js_render`, `proxy_strategy`, `geolocation`, `only_main_content`, `actions`, `tag`. The
+`scrape` is forwarded to each page fetch and accepts the shared `POST /scrape` options with the same
+names and meaning, including `output`, `js_render`, `proxy_strategy`, `geolocation`,
+`only_main_content`, `actions`, `tag`, `timeout`, `wait_selector`, `wait_ms`, `prompt`, and `schema`. The
 crawler sets `url`, `method`, and `output` itself (`body` is dropped). `scrape.output` may be used
 instead of the top-level `output` with the same format names as `/scrape`; when both are present,
 top-level `output` wins.
@@ -217,21 +221,26 @@ returns `202` immediately.
 | `limit` | int | `10000` | 1–10000 |
 | `method` | string | `"GET"` | |
 | `body` | object \| string | — | same rules as `/scrape` |
-| `jsRender` | bool \| omitted | omitted | same tri-state as `/scrape` `js_render`; note the camelCase |
-| `proxyStrategy` | string | `"auto"` | same values as `/scrape` `proxy_strategy`; note the camelCase |
+| `js_render` | bool \| omitted | omitted | same tri-state and name as `/scrape` |
+| `proxy_strategy` | string | `"auto"` | same values and name as `/scrape` |
 | `output` | string[] | `["html"]` | same values and rules as `/scrape` |
-| `only_main_content` | bool | `true` | snake_case, unlike its neighbours |
+| `only_main_content` | bool | `true` | same name as `/scrape` |
 | `geolocation` | string | — | |
 | `session_id` | string | — | snake_case; applies to every URL |
-| `tag` | string[] | `[]` | list only |
+| `tag` | string \| string[] | `[]` | same shape as `/scrape` |
 | `actions` | object[] | `[]` | |
 | `prompt` | string | — | required with `json` output unless `schema` is set |
 | `schema` | object | — | |
-| `scheduleToCloseTimeoutSecs` | int | `86400` | |
-| `heartbeatTimeoutSecs` | int | `30` | |
+| `timeout` | int | — | milliseconds, 1000–60000 |
+| `wait_selector` | string | — | CSS selector to wait for |
+| `wait_ms` | int | — | extra browser settle wait in milliseconds |
+| `scheduleToCloseTimeoutSecs` | int | `86400` | batch job setting |
+| `heartbeatTimeoutSecs` | int | `30` | batch job setting |
+| `email` | string | — | completion notification |
+| `webhook` | object | — | notification configuration |
 
 Validation mirrors `/scrape`, so a bad combination fails the whole job with `422` at submission
-rather than failing every item. `jsRender: false` with `actions` or screenshot output is rejected.
+rather than failing every item. `js_render: false` with `actions` or screenshot output is rejected.
 
 `202` body mirrors crawl's: `{"success", "id", "url": "/batch/scrape/<id>", "workflowId", "runId"}`.
 `GET /batch/scrape/{id}` and `DELETE /batch/scrape/{id}` behave exactly like their crawl
