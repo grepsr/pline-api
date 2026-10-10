@@ -678,9 +678,6 @@ mod tests {
             wait_ms: None,
             method: "GET",
             body: None,
-            timeout: None,
-            wait_selector: None,
-            wait_ms: None,
         }
     }
 
