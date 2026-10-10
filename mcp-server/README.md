@@ -34,7 +34,7 @@ GitHub Release. Node.js 18+ is the only requirement:
 
 Arguments pass straight through to the binary (`npx -y pline-api --http 127.0.0.1:8080`), and
 `PLINE_MCP_BINARY=/path/to/pline-mcp` makes the launcher run a build of your own. The launcher
-source is in [`../npm`](../npm); per-platform packages are named `pline-mcp-<os>-<cpu>`.
+source is in [`../npm`](../npm); per-platform packages are named `pline-api-<os>-<cpu>`.
 
 ## Install a prebuilt binary
 
@@ -56,7 +56,7 @@ With Docker installed, an MCP client can run the server over stdio without downl
     "pline.ai": {
       "command": "docker",
       "args": ["run", "-i", "--rm", "-e", "PLINE_BASE_URL", "-e", "PLINE_API_KEY",
-               "ghcr.io/grepsr/pline-mcp:0.2.0", "--stdio"],
+               "ghcr.io/grepsr/pline-mcp:0.3.1", "--stdio"],
       "env": {
         "PLINE_BASE_URL": "https://api.example.com/v1",
         "PLINE_API_KEY": "your-own-api-key"
@@ -73,7 +73,7 @@ volume. Pin the tag to a release version; `latest` moves. The same image serves 
 started without `--stdio`:
 
 ```sh
-docker run --rm -p 8080:8080 -e PLINE_BASE_URL=https://api.example.com/v1 ghcr.io/grepsr/pline-mcp:0.2.0
+docker run --rm -p 8080:8080 -e PLINE_BASE_URL=https://api.example.com/v1 ghcr.io/grepsr/pline-mcp:0.3.1
 ```
 
 ## Build from Git

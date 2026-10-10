@@ -9,11 +9,11 @@ hand, which credentials each step needs, and the prerequisites that gate everyth
 
 | Prerequisite | Why | Status |
 |---|---|---|
-| Public repository | The MCP Registry resolves `repository.url`; npm provenance attestations need a public repo; the Claude directory requires a public GitHub repository before a plugin bundle goes live; awesome lists, Glama, and `npx skills add` only read public repositories; GHCR images pushed from a private repository are private; the `ubuntu-*-arm` runners used for Linux arm64 and the arm64 image are free only for public repositories. | **Private today.** Make `grepsr/pline-api` public in repository settings. |
+| Public repository | The MCP Registry resolves `repository.url`; npm provenance attestations need a public repo; the Claude directory requires a public GitHub repository before a plugin bundle goes live; awesome lists, Glama, and `npx skills add` only read public repositories; GHCR images pushed from a private repository are private; the `ubuntu-*-arm` runners used for Linux arm64 and the arm64 image are free only for public repositories. | **Done.** `grepsr/pline-api` is public. |
 | Open-source license | The Claude directory blocks a plugin without a `LICENSE` file or `license` in `plugin.json`; npm warns without one; awesome-list maintainers and crates.io require one. | **Done.** MIT, in `LICENSE`, `mcp-server/Cargo.toml`, `npm/package.json`, `.claude-plugin/plugin.json`, and the README. |
-| Public GHCR package | The registry validates the OCI package anonymously. | After the first tagged release, open the `pline-mcp` package under the organization's **Packages → Package settings** and set visibility to **Public**. Later pushes keep that setting. |
-| npm package names | Launcher: `pline-api`; platform packages retain their `pline-mcp-<os>-<cpu>` names. | Confirm npm availability before publishing. |
-| A new version tag | `v0.1.0` is already a published release, and the release workflow refuses to replace its assets. | **Done.** Every version string is set to `0.1.1`; the first end-to-end run is the `v0.1.1` tag. |
+| Public GHCR package | The registry validates the OCI package anonymously. | Verify `pline-mcp` is public before publishing the MCP Registry entry. |
+| npm package names | Launcher: `pline-api`; platform packages retain their `pline-api-<os>-<cpu>` names. | Confirm npm availability before publishing. |
+| A new version tag | Tags are immutable release inputs; `v0.3.0` already exists with no build assets. | Use the next version, `0.3.1`, after the version bump reaches `main`. |
 
 ## Credentials and secrets
 
@@ -84,7 +84,7 @@ EOF
 
 - **Layout:** [`npm/`](npm) holds the `pline-api` launcher (`bin/pline-mcp.js`, README, package.json
   with `mcpName`). It resolves the binary from `PLINE_MCP_BINARY`, then from the platform package
-  installed through `optionalDependencies` (`pline-mcp-darwin-arm64`, `-darwin-x64`, `-linux-x64`,
+  installed through `optionalDependencies` (`pline-api-darwin-arm64`, `-darwin-x64`, `-linux-x64`,
   `-linux-arm64`, `-win32-x64`), then from a checksum-verified download of the GitHub Release archive
   cached under `~/.cache/pline-mcp/<version>/`. Platform packages are generated in CI, never committed.
 - **Testing locally:** `cargo build --manifest-path mcp-server/Cargo.toml --locked`, then

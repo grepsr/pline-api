@@ -368,19 +368,19 @@ Use `--help` on any command for flags. For wire-level examples, see the skill's
 
 ## Download the MCP binary
 
-Download a prebuilt binary from [pline.ai MCP v0.2.0](https://github.com/grepsr/pline-api/releases/tag/v0.2.0)
+Download a prebuilt binary from [pline.ai MCP v0.3.1](https://github.com/grepsr/pline-api/releases/tag/v0.3.1)
 using the links below. No Rust installation is needed. See
 [GitHub Releases](https://github.com/grepsr/pline-api/releases) for all versions.
 
 | Platform | Download |
 |---|---|
-| macOS Apple Silicon | [pline-mcp-v0.2.0-aarch64-apple-darwin.tar.gz](https://github.com/grepsr/pline-api/releases/download/v0.2.0/pline-mcp-v0.2.0-aarch64-apple-darwin.tar.gz) |
-| macOS Intel | [pline-mcp-v0.2.0-x86_64-apple-darwin.tar.gz](https://github.com/grepsr/pline-api/releases/download/v0.2.0/pline-mcp-v0.2.0-x86_64-apple-darwin.tar.gz) |
-| Linux x64, glibc 2.35+ (Ubuntu 22.04 or newer) | [pline-mcp-v0.2.0-x86_64-unknown-linux-gnu.tar.gz](https://github.com/grepsr/pline-api/releases/download/v0.2.0/pline-mcp-v0.2.0-x86_64-unknown-linux-gnu.tar.gz) |
-| Linux arm64, glibc 2.35+ (Ubuntu 22.04 or newer) | [pline-mcp-v0.2.0-aarch64-unknown-linux-gnu.tar.gz](https://github.com/grepsr/pline-api/releases/download/v0.2.0/pline-mcp-v0.2.0-aarch64-unknown-linux-gnu.tar.gz) |
-| Windows x64 | [pline-mcp-v0.2.0-x86_64-pc-windows-msvc.zip](https://github.com/grepsr/pline-api/releases/download/v0.2.0/pline-mcp-v0.2.0-x86_64-pc-windows-msvc.zip) |
+| macOS Apple Silicon | [pline-mcp-v0.3.1-aarch64-apple-darwin.tar.gz](https://github.com/grepsr/pline-api/releases/download/v0.3.1/pline-mcp-v0.3.1-aarch64-apple-darwin.tar.gz) |
+| macOS Intel | [pline-mcp-v0.3.1-x86_64-apple-darwin.tar.gz](https://github.com/grepsr/pline-api/releases/download/v0.3.1/pline-mcp-v0.3.1-x86_64-apple-darwin.tar.gz) |
+| Linux x64, glibc 2.35+ (Ubuntu 22.04 or newer) | [pline-mcp-v0.3.1-x86_64-unknown-linux-gnu.tar.gz](https://github.com/grepsr/pline-api/releases/download/v0.3.1/pline-mcp-v0.3.1-x86_64-unknown-linux-gnu.tar.gz) |
+| Linux arm64, glibc 2.35+ (Ubuntu 22.04 or newer) | [pline-mcp-v0.3.1-aarch64-unknown-linux-gnu.tar.gz](https://github.com/grepsr/pline-api/releases/download/v0.3.1/pline-mcp-v0.3.1-aarch64-unknown-linux-gnu.tar.gz) |
+| Windows x64 | [pline-mcp-v0.3.1-x86_64-pc-windows-msvc.zip](https://github.com/grepsr/pline-api/releases/download/v0.3.1/pline-mcp-v0.3.1-x86_64-pc-windows-msvc.zip) |
 
-Download [SHA256SUMS](https://github.com/grepsr/pline-api/releases/download/v0.2.0/SHA256SUMS)
+Download [SHA256SUMS](https://github.com/grepsr/pline-api/releases/download/v0.3.1/SHA256SUMS)
 and compare the archive's SHA-256 hash with its line in that file: use `shasum -a 256 FILE`
 on macOS, `sha256sum FILE` on Linux, or `Get-FileHash FILE -Algorithm SHA256` in PowerShell.
 Extract the archive into a permanent folder and use the executable's absolute path in the MCP
@@ -492,7 +492,7 @@ Use it where Node.js is unavailable or containers are preferred:
     "pline.ai": {
       "command": "docker",
       "args": ["run", "-i", "--rm", "-e", "PLINE_BASE_URL", "-e", "PLINE_API_KEY",
-               "ghcr.io/grepsr/pline-mcp:0.2.0", "--stdio"],
+               "ghcr.io/grepsr/pline-mcp:0.3.1", "--stdio"],
       "env": {
         "PLINE_BASE_URL": "https://api.example.com/v1",
         "PLINE_API_KEY": "your-own-api-key"
