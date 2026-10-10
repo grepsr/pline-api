@@ -12,8 +12,8 @@ hand, which credentials each step needs, and the prerequisites that gate everyth
 | Public repository | The MCP Registry resolves `repository.url`; npm provenance attestations need a public repo; the Claude directory requires a public GitHub repository before a plugin bundle goes live; awesome lists, Glama, and `npx skills add` only read public repositories; GHCR images pushed from a private repository are private; the `ubuntu-*-arm` runners used for Linux arm64 and the arm64 image are free only for public repositories. | **Done.** `grepsr/pline-api` is public. |
 | Open-source license | The Claude directory blocks a plugin without a `LICENSE` file or `license` in `plugin.json`; npm warns without one; awesome-list maintainers and crates.io require one. | **Done.** MIT, in `LICENSE`, `mcp-server/Cargo.toml`, `npm/package.json`, `.claude-plugin/plugin.json`, and the README. |
 | Public GHCR package | The registry validates the OCI package anonymously. | Verify `pline-mcp` is public before publishing the MCP Registry entry. |
-| npm package names | Launcher: `pline-api`; platform packages retain their `pline-api-<os>-<cpu>` names. | Confirm npm availability before publishing. |
-| A new version tag | Tags are immutable release inputs; `v0.3.0` already exists with no build assets. | Use the next version, `0.3.1`, after the version bump reaches `main`. |
+| npm package names | Launcher: `pline-api`; platform packages are scoped as `@pline/api-<os>-<cpu>` because npm's spam detection rejects new unscoped `*-win32-x64` names. | The `pline` npm org exists; `NPM_TOKEN` must have publish rights on it for the first scoped publish. |
+| A new version tag | Tags are immutable release inputs; `v0.3.1` already exists with the unscoped platform package names, and its npm publish stopped at the Windows package. | Use the next version, `0.3.2`, after the version bump reaches `main`. |
 
 ## Credentials and secrets
 
