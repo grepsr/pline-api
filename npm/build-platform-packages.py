@@ -1,4 +1,4 @@
-"""Assemble the per-platform npm packages (pline-mcp-<os>-<cpu>) from release archives.
+"""Assemble the per-platform npm packages (pline-api-<os>-<cpu>) from release archives.
 
 Each package carries one prebuilt binary under bin/ and declares os/cpu so npm installs only the
 matching one through the optionalDependencies of the main `pline-api` package.
@@ -25,11 +25,11 @@ MAIN = json.loads((ROOT / 'npm/package.json').read_text(encoding='utf-8'))
 # Keep in sync with PLATFORMS in npm/bin/pline-mcp.js and the matrix in release.yml.
 PLATFORMS = [
     # (npm package, node os, node cpu, cargo target, archive extension)
-    ('pline-mcp-darwin-arm64', 'darwin', 'arm64', 'aarch64-apple-darwin', 'tar.gz'),
-    ('pline-mcp-darwin-x64', 'darwin', 'x64', 'x86_64-apple-darwin', 'tar.gz'),
-    ('pline-mcp-linux-x64', 'linux', 'x64', 'x86_64-unknown-linux-gnu', 'tar.gz'),
-    ('pline-mcp-linux-arm64', 'linux', 'arm64', 'aarch64-unknown-linux-gnu', 'tar.gz'),
-    ('pline-mcp-win32-x64', 'win32', 'x64', 'x86_64-pc-windows-msvc', 'zip'),
+    ('pline-api-darwin-arm64', 'darwin', 'arm64', 'aarch64-apple-darwin', 'tar.gz'),
+    ('pline-api-darwin-x64', 'darwin', 'x64', 'x86_64-apple-darwin', 'tar.gz'),
+    ('pline-api-linux-x64', 'linux', 'x64', 'x86_64-unknown-linux-gnu', 'tar.gz'),
+    ('pline-api-linux-arm64', 'linux', 'arm64', 'aarch64-unknown-linux-gnu', 'tar.gz'),
+    ('pline-api-win32-x64', 'win32', 'x64', 'x86_64-pc-windows-msvc', 'zip'),
 ]
 
 
