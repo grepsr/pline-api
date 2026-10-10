@@ -27,7 +27,7 @@ jobs:
       - run: cargo test --manifest-path mcp-server/Cargo.toml --locked
       - run: cargo build --manifest-path mcp-server/Cargo.toml --locked
       - run: python3 tests/smoke.py
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 'lts/*'
       - name: Smoke test the npm launcher against the local build
