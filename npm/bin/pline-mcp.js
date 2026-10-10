@@ -7,7 +7,7 @@
 //
 // Resolution order:
 //   1. PLINE_MCP_BINARY, an explicit path (development and tests).
-//   2. The platform package installed through optionalDependencies, e.g. pline-api-darwin-arm64.
+//   2. The platform package installed through optionalDependencies, e.g. @pline/api-darwin-arm64.
 //   3. A cached download of the matching GitHub Release archive, verified against SHA256SUMS.
 //
 // Everything this script prints goes to stderr: stdout is the MCP stdio channel.
@@ -23,11 +23,11 @@ const pkg = require('../package.json');
 const REPO = 'grepsr/pline-api';
 // Keep in sync with PLATFORMS in npm/build-platform-packages.py and the matrix in release.yml.
 const PLATFORMS = {
-  'darwin-arm64': { pkg: 'pline-api-darwin-arm64', target: 'aarch64-apple-darwin', ext: 'tar.gz' },
-  'darwin-x64': { pkg: 'pline-api-darwin-x64', target: 'x86_64-apple-darwin', ext: 'tar.gz' },
-  'linux-x64': { pkg: 'pline-api-linux-x64', target: 'x86_64-unknown-linux-gnu', ext: 'tar.gz' },
-  'linux-arm64': { pkg: 'pline-api-linux-arm64', target: 'aarch64-unknown-linux-gnu', ext: 'tar.gz' },
-  'win32-x64': { pkg: 'pline-api-win32-x64', target: 'x86_64-pc-windows-msvc', ext: 'zip' },
+  'darwin-arm64': { pkg: '@pline/api-darwin-arm64', target: 'aarch64-apple-darwin', ext: 'tar.gz' },
+  'darwin-x64': { pkg: '@pline/api-darwin-x64', target: 'x86_64-apple-darwin', ext: 'tar.gz' },
+  'linux-x64': { pkg: '@pline/api-linux-x64', target: 'x86_64-unknown-linux-gnu', ext: 'tar.gz' },
+  'linux-arm64': { pkg: '@pline/api-linux-arm64', target: 'aarch64-unknown-linux-gnu', ext: 'tar.gz' },
+  'win32-x64': { pkg: '@pline/api-win32-x64', target: 'x86_64-pc-windows-msvc', ext: 'zip' },
 };
 
 const exeName = process.platform === 'win32' ? 'pline-mcp.exe' : 'pline-mcp';

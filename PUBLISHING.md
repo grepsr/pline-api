@@ -84,7 +84,7 @@ EOF
 
 - **Layout:** [`npm/`](npm) holds the `pline-api` launcher (`bin/pline-mcp.js`, README, package.json
   with `mcpName`). It resolves the binary from `PLINE_MCP_BINARY`, then from the platform package
-  installed through `optionalDependencies` (`pline-api-darwin-arm64`, `-darwin-x64`, `-linux-x64`,
+  installed through `optionalDependencies` (`@pline/api-darwin-arm64`, `-darwin-x64`, `-linux-x64`,
   `-linux-arm64`, `-win32-x64`), then from a checksum-verified download of the GitHub Release archive
   cached under `~/.cache/pline-mcp/<version>/`. Platform packages are generated in CI, never committed.
 - **Testing locally:** `cargo build --manifest-path mcp-server/Cargo.toml --locked`, then
