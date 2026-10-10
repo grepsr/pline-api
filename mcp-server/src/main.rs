@@ -46,9 +46,9 @@ anything but small pages when the server runs locally.
 - Quote `request_id` when reporting a problem. Read `pline://guide` for the full guidance and \
 `pline://reference` for every field and constraint.
 
-How pline.ai obtains a page beyond the documented fields is not part of this interface: request \
-headers, timeouts, wait conditions, and the fetching method are not caller-controlled. Say so if asked, \
-rather than speculating.";
+Use `timeout`, `wait_selector`, and `wait_ms` when needed; browser wait options require a browser-capable \
+GET request. How pline.ai obtains a page beyond these fields is not part of this interface, so do not \
+speculate about undocumented controls.";
 
 #[derive(Debug, Clone, Copy, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
@@ -178,7 +178,7 @@ fn default_batch_limit() -> u32 {
 }
 
 fn default_crawl_limit() -> u32 {
-    200
+    10_000
 }
 
 fn default_map_limit() -> u32 {
@@ -186,7 +186,7 @@ fn default_map_limit() -> u32 {
 }
 
 fn default_country() -> String {
-    "US".to_string()
+    "all".to_string()
 }
 
 fn default_language() -> String {
@@ -200,7 +200,7 @@ fn default_num_results() -> u32 {
 /// Options shared by `scrape`, `batch_scrape_start`, and (as a subset) `crawl_start`.
 #[derive(Debug, Deserialize, JsonSchema)]
 struct FetchOptions {
-    /// Formats to return, any combination of html, clean_html, links, markdown, screenshot,
+    /// Formats to return, any combination of html, clean_html, links, markdown, clean_markdown, screenshot,
     /// screenshot_full_page, json. Default ["html"]. Returned under `data` as html_body, clean_html,
     /// links, markdown, screenshot, screenshot_full_page, json.
     #[serde(default)]
@@ -208,7 +208,7 @@ struct FetchOptions {
     /// JavaScript rendering, three-way. Unset (default): the service decides, escalating to a browser
     /// only when a plain fetch comes back empty or as a JS shell. true: require a browser from the
     /// first attempt. false: forbid a browser; cheapest and fastest, fails instead of escalating.
-    /// false cannot be combined with actions or screenshot output.
+    /// false cannot be combined with actions, wait options, or screenshot output.
     #[serde(default)]
     js_render: Option<bool>,
     /// Access-strength tier in ascending cost. Unset/auto: start cheap and escalate only as far as
@@ -313,6 +313,69 @@ struct BatchScrapeStartParams {
     /// Maximum URLs accepted for this job (1-10000). Default 10000.
     #[serde(default = "default_batch_limit")]
     limit: u32,
+    /// Workflow schedule-to-close deadline in seconds. Default 86400.
+    #[serde(default = "default_schedule_timeout")]
+    schedule_to_close_timeout_secs: u64,
+    /// Workflow heartbeat timeout in seconds. Default 30.
+    #[serde(default = "default_heartbeat_timeout")]
+    heartbeat_timeout_secs: u64,
+    /// Optional completion webhook.
+    #[serde(default)]
+    webhook: Option<WebhookParams>,
+    /// Optional completion email.
+    #[serde(default)]
+    email: Option<String>,
+}
+
+fn default_schedule_timeout() -> u64 {
+    86_400
+}
+
+fn default_heartbeat_timeout() -> u64 {
+    30
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+struct WebhookParams {
+    /// Public HTTPS endpoint receiving job events.
+    url: String,
+    /// Optional HTTP headers sent with each event.
+    #[serde(default)]
+    headers: HashMap<String, String>,
+    /// Optional JSON metadata included in each event.
+    #[serde(default)]
+    metadata: Option<Value>,
+    /// Events to send: started, page, completed, failed. Empty means all supported events.
+    #[serde(default)]
+    events: Vec<String>,
+}
+
+impl WebhookParams {
+    fn to_value(&self, allow_page: bool) -> client::Result<Value> {
+        let allowed = if allow_page {
+            &["started", "page", "completed", "failed"][..]
+        } else {
+            &["started", "completed", "failed"][..]
+        };
+        if let Some(event) = self
+            .events
+            .iter()
+            .find(|event| !allowed.contains(&event.as_str()))
+        {
+            return Err(PlineError::Invalid(format!(
+                "unsupported webhook event {event:?}; choose from {}",
+                allowed.join(", ")
+            )));
+        }
+        let mut webhook = Map::new();
+        webhook.insert("url".into(), json!(self.url.trim()));
+        webhook.insert("headers".into(), json!(self.headers));
+        webhook.insert("events".into(), json!(self.events));
+        if let Some(metadata) = &self.metadata {
+            webhook.insert("metadata".into(), metadata.clone());
+        }
+        Ok(Value::Object(webhook))
+    }
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -338,7 +401,7 @@ struct JobIdParams {
 struct CrawlStartParams {
     /// Seed URL; the crawl follows links from here.
     url: String,
-    /// Maximum pages (1-10000). Default 200. Confirm scope with the user for big sites.
+    /// Maximum pages (1-10000). Default 10000, matching the API. Confirm scope for large sites.
     #[serde(default = "default_crawl_limit")]
     limit: u32,
     /// Formats to store, any of markdown, html, clean_html, links, screenshot, screenshot_full_page. Default ["markdown"].
@@ -359,6 +422,9 @@ struct CrawlStartParams {
     /// Drop URLs carrying query strings.
     #[serde(default)]
     ignore_query_parameters: bool,
+    /// Ignore robots.txt while discovering URLs. Default true.
+    #[serde(default = "default_true")]
+    ignore_robots_txt: bool,
     /// Allow leaving the seed's path prefix.
     #[serde(default)]
     crawl_entire_domain: bool,
@@ -383,12 +449,30 @@ struct CrawlStartParams {
     /// Up to 25 labels echoed in usage logs.
     #[serde(default)]
     tag: Option<client::TagInput>,
+    /// Per-page request deadline in milliseconds (1000-60000).
+    #[serde(default)]
+    timeout: Option<u64>,
+    /// CSS selector to wait for on every browser-rendered page.
+    #[serde(default)]
+    wait_selector: Option<String>,
+    /// Extra settle wait in milliseconds per browser-rendered page (0-60000).
+    #[serde(default)]
+    wait_ms: Option<u64>,
     /// Address notified when the crawl completes.
     #[serde(default)]
     email: Option<String>,
     /// Public HTTPS URL receiving started/page/completed/failed events.
     #[serde(default)]
     webhook_url: Option<String>,
+    /// Full event webhook configuration. Use this instead of webhook_url for headers, metadata, or event selection.
+    #[serde(default)]
+    webhook: Option<WebhookParams>,
+    /// Workflow schedule-to-close deadline in seconds. Default 86400.
+    #[serde(default = "default_schedule_timeout")]
+    schedule_to_close_timeout_secs: u64,
+    /// Workflow heartbeat timeout in seconds. Default 30.
+    #[serde(default = "default_heartbeat_timeout")]
+    heartbeat_timeout_secs: u64,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -412,14 +496,15 @@ struct MapSiteParams {
     limit: u32,
     /// Whole-request budget in ms; the service answers 504 when exceeded.
     #[serde(default)]
-    timeout_ms: Option<u64>,
+    #[serde(alias = "timeout_ms")]
+    timeout: Option<u64>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
 struct SearchParams {
     /// Search keywords (max 512 chars).
     query: String,
-    /// 2-letter country code for localization. Default US.
+    /// Country code for localization, or "all". Default all.
     #[serde(default = "default_country")]
     country: String,
     /// 2-letter result language code. Default en.
@@ -826,6 +911,20 @@ impl PlineServer {
         if let Some(session_id) = params.session_id.filter(|id| !id.trim().is_empty()) {
             body.insert("session_id".into(), json!(session_id));
         }
+        body.insert(
+            "scheduleToCloseTimeoutSecs".into(),
+            json!(params.schedule_to_close_timeout_secs),
+        );
+        body.insert(
+            "heartbeatTimeoutSecs".into(),
+            json!(params.heartbeat_timeout_secs),
+        );
+        if let Some(webhook) = &params.webhook {
+            body.insert("webhook".into(), webhook.to_value(false)?);
+        }
+        if let Some(email) = params.email.filter(|email| !email.trim().is_empty()) {
+            body.insert("email".into(), json!(email.trim()));
+        }
         self.api
             .request(
                 key,
@@ -860,6 +959,7 @@ impl PlineServer {
         body.insert("limit".into(), json!(params.limit));
         body.insert("sitemap".into(), json!(params.sitemap.as_str()));
         body.insert("output".into(), json!(outputs));
+        let mut per_page = Map::new();
         if let Some(paths) = params.include_paths.filter(|paths| !paths.is_empty()) {
             body.insert("includePaths".into(), json!(paths));
         }
@@ -872,6 +972,9 @@ impl PlineServer {
         if params.ignore_query_parameters {
             body.insert("ignoreQueryParameters".into(), json!(true));
         }
+        if !params.ignore_robots_txt {
+            body.insert("ignoreRobotsTxt".into(), json!(false));
+        }
         if params.crawl_entire_domain {
             body.insert("crawlEntireDomain".into(), json!(true));
         }
@@ -881,11 +984,32 @@ impl PlineServer {
         if let Some(email) = params.email.filter(|email| !email.trim().is_empty()) {
             body.insert("email".into(), json!(email.trim()));
         }
-        if let Some(url) = params.webhook_url.filter(|url| !url.trim().is_empty()) {
-            body.insert("webhook".into(), json!({"url": url.trim()}));
+        if params.webhook.is_some()
+            && params
+                .webhook_url
+                .as_deref()
+                .is_some_and(|url| !url.trim().is_empty())
+        {
+            return Err(PlineError::Invalid(
+                "use webhook or webhook_url, not both".into(),
+            ));
         }
-
-        let mut per_page = Map::new();
+        if let Some(webhook) = &params.webhook {
+            body.insert("webhook".into(), webhook.to_value(true)?);
+        } else if let Some(url) = params.webhook_url.filter(|url| !url.trim().is_empty()) {
+            body.insert(
+                "webhook".into(),
+                json!({"url": url.trim(), "headers": {}, "events": []}),
+            );
+        }
+        body.insert(
+            "scheduleToCloseTimeoutSecs".into(),
+            json!(params.schedule_to_close_timeout_secs),
+        );
+        body.insert(
+            "heartbeatTimeoutSecs".into(),
+            json!(params.heartbeat_timeout_secs),
+        );
         if let Some(js_render) = params.js_render {
             per_page.insert("js_render".into(), json!(js_render));
         }
@@ -896,6 +1020,30 @@ impl PlineServer {
             client::validate_country(params.geolocation.as_deref(), "geolocation")?
         {
             per_page.insert("geolocation".into(), json!(country));
+        }
+        if let Some(timeout) = params.timeout {
+            if !(1_000..=60_000).contains(&timeout) {
+                return Err(PlineError::Invalid(
+                    "timeout must be between 1000 and 60000 milliseconds".into(),
+                ));
+            }
+            per_page.insert("timeout".into(), json!(timeout));
+        }
+        if let Some(selector) = params
+            .wait_selector
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
+            per_page.insert("wait_selector".into(), json!(selector));
+        }
+        if let Some(wait_ms) = params.wait_ms {
+            if wait_ms > 60_000 {
+                return Err(PlineError::Invalid(
+                    "wait_ms must be between 0 and 60000 milliseconds".into(),
+                ));
+            }
+            per_page.insert("wait_ms".into(), json!(wait_ms));
         }
         if !params.only_main_content {
             per_page.insert("only_main_content".into(), json!(false));
@@ -920,10 +1068,16 @@ impl PlineServer {
             per_page.insert("tag".into(), json!(tags));
         }
         if params.js_render == Some(false)
-            && (has_actions || outputs.iter().any(|o| o.starts_with("screenshot")))
+            && (has_actions
+                || params
+                    .wait_selector
+                    .as_deref()
+                    .is_some_and(|selector| !selector.trim().is_empty())
+                || params.wait_ms.is_some_and(|wait_ms| wait_ms > 0)
+                || outputs.iter().any(|o| o.starts_with("screenshot")))
         {
             return Err(PlineError::Invalid(
-                "js_render=false cannot be combined with actions or screenshot output; they need a browser".into(),
+                "js_render=false cannot be combined with actions, wait options, or screenshot output; they need a browser".into(),
             ));
         }
         if !per_page.is_empty() {
@@ -986,7 +1140,7 @@ impl PlineServer {
         if params.ignore_cache {
             body.insert("ignoreCache".into(), json!(true));
         }
-        if let Some(timeout) = params.timeout_ms {
+        if let Some(timeout) = params.timeout {
             body.insert("timeout".into(), json!(timeout));
         }
         self.api
@@ -1004,8 +1158,11 @@ impl PlineServer {
                 "num_results must be between 1 and 100".into(),
             ));
         }
-        let country =
-            client::validate_country(Some(&params.country), "country")?.unwrap_or_default();
+        let country = if params.country.trim().eq_ignore_ascii_case("all") {
+            "all".to_string()
+        } else {
+            client::validate_country(Some(&params.country), "country")?.unwrap_or_default()
+        };
         let language = params.language.trim().to_ascii_lowercase();
         if language.len() != 2 || !language.chars().all(|c| c.is_ascii_alphabetic()) {
             return Err(PlineError::Invalid(

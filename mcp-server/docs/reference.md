@@ -15,8 +15,8 @@ rather than silently ignored:
 | `POST /batch/scrape` | batch-only fields are camelCase; shared scrape options are snake_case (legacy camelCase aliases are accepted) |
 | `GET /serp` | snake_case query params |
 
-Only the fields listed in this document are part of the interface. Request headers and service-level
-retry settings are not caller-controlled.
+Only the fields listed in this document are part of the interface. Request headers are not
+caller-controlled.
 
 ---
 
@@ -69,6 +69,7 @@ Synchronous. Returns `200` with the page, or an error status. Server-side budget
 | `clean_html` | `clean_html` | scripts/styles/clutter removed |
 | `links` | `links` | absolute, deduplicated links from cleaned HTML |
 | `markdown` | `markdown` | Markdown conversion, good LLM input |
+| `clean_markdown` | `clean_markdown` | Markdown with links, URLs, and images removed |
 | `screenshot` | `screenshot` | temporary signed image URL, viewport only |
 | `screenshot_full_page` | `screenshot_full_page` | temporary signed image URL, full page |
 | `json` | `json` | AI extraction driven by `prompt` and/or `schema` |
@@ -168,6 +169,7 @@ Link-following crawl. Runs in the background, survives restarts, returns `202` i
 | `maxDiscoveryDepth` | int | — | link depth from the seed |
 | `sitemap` | enum | `include` | `skip` \| `include` \| `only` |
 | `ignoreQueryParameters` | bool | `false` | drop URLs with query strings |
+| `ignoreRobotsTxt` | bool | `true` | skip robots.txt rules during URL discovery |
 | `crawlEntireDomain` | bool | `false` | leave the seed path |
 | `allowSubdomains` | bool | `false` | include subdomains |
 | `output` | string[] | `["markdown"]` | `markdown`, `html`, `clean_html`, `links`, `screenshot`, `screenshot_full_page`; at least one format is required |
@@ -229,15 +231,15 @@ returns `202` immediately.
 | `session_id` | string | — | snake_case; applies to every URL |
 | `tag` | string \| string[] | `[]` | same shape as `/scrape` |
 | `actions` | object[] | `[]` | |
+| `timeout` | int | — | request deadline in milliseconds, 1000–60000 |
+| `wait_selector` | string | — | CSS selector to wait for on browser-rendered pages |
+| `wait_ms` | int | — | extra browser settle wait in milliseconds, 0–60000 |
 | `prompt` | string | — | required with `json` output unless `schema` is set |
 | `schema` | object | — | |
-| `timeout` | int | — | milliseconds, 1000–60000 |
-| `wait_selector` | string | — | CSS selector to wait for |
-| `wait_ms` | int | — | extra browser settle wait in milliseconds |
-| `scheduleToCloseTimeoutSecs` | int | `86400` | batch job setting |
-| `heartbeatTimeoutSecs` | int | `30` | batch job setting |
-| `email` | string | — | completion notification |
-| `webhook` | object | — | notification configuration |
+| `webhook` | object | — | `{url, headers, metadata, events}`; events are `started`, `completed`, or `failed` |
+| `email` | string | — | optional completion notification |
+| `scheduleToCloseTimeoutSecs` | int | `86400` | |
+| `heartbeatTimeoutSecs` | int | `30` | |
 
 Validation mirrors `/scrape`, so a bad combination fails the whole job with `422` at submission
 rather than failing every item. `js_render: false` with `actions` or screenshot output is rejected.
@@ -287,7 +289,7 @@ Query parameters (snake_case, unknown params rejected):
 | Param | Default | Notes |
 |---|---|---|
 | `query` | — | required, ≤512 chars |
-| `country` | `US` | 2-letter code |
+| `country` | `all` | `all` or a 2-letter code |
 | `language` | `en` | 2-letter code |
 | `num_results` | `10` | 1–100 |
 | `tbs` | — | `qdr:d`, `qdr:w`, `qdr:m` |

@@ -4,7 +4,7 @@ name: Publish release
 # publishes it). Two stages, in order:
 #
 #   npm       Builds the five platform packages from the release archives and publishes them plus
-#             the `pline-mcp` launcher to npm. Auth: npm trusted publishing (GitHub OIDC) once each
+#             the `pline-api` launcher to npm. Auth: npm trusted publishing (GitHub OIDC) once each
 #             package has a trusted publisher configured on npmjs.com for this workflow file;
 #             until then, an NPM_TOKEN secret on the npm-publish environment (granular token with
 #             publish rights and 2FA bypass).
@@ -108,13 +108,13 @@ jobs:
           set -euo pipefail
           version="${RELEASE_TAG#v}"
           for attempt in 1 2 3 4 5 6; do
-            if npm view "pline-mcp@$version" version >/dev/null 2>&1 && \
+            if npm view "pline-api@$version" version >/dev/null 2>&1 && \
                npm view "pline-mcp-linux-x64@$version" version >/dev/null 2>&1; then
               break
             fi
             sleep 20
           done
-          npx -y "pline-mcp@$version" --help
+          npx -y "pline-api@$version" --help
 
   registry:
     name: Publish to MCP Registry
@@ -140,9 +140,9 @@ jobs:
           set -euo pipefail
           version="${RELEASE_TAG#v}"
           expected=$(python3 -c 'import json; print(json.load(open("server.json"))["name"])')
-          actual=$(npm view "pline-mcp@$version" mcpName 2>/dev/null || true)
+          actual=$(npm view "pline-api@$version" mcpName 2>/dev/null || true)
           if [ "$actual" != "$expected" ]; then
-            echo "::error::npm pline-mcp@$version has mcpName '$actual', expected '$expected'. Publish the npm stage first." >&2
+            echo "::error::npm pline-api@$version has mcpName '$actual', expected '$expected'. Publish the npm stage first." >&2
             exit 1
           fi
       - name: Confirm the image is public and carries the registry label

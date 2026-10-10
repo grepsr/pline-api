@@ -3,7 +3,7 @@
 
 // Launcher for the pline.ai MCP server. The server itself is a native Rust binary; this script
 // finds the right build for the current platform and runs it with the caller's arguments and
-// environment, so `npx -y pline-mcp` works like any Node-based MCP server.
+// environment, so `npx -y pline-api` works like any Node-based MCP server.
 //
 // Resolution order:
 //   1. PLINE_MCP_BINARY, an explicit path (development and tests).
