@@ -224,7 +224,7 @@ struct FetchOptions {
     geolocation: Option<String>,
     /// Up to 25 labels, 1-25 chars each of [A-Za-z0-9._-], echoed in usage logs.
     #[serde(default)]
-    tag: Option<Vec<String>>,
+    tag: Option<client::TagInput>,
     /// Browser steps run in order after load, e.g. {"action":"click","selector":"#more"},
     /// {"action":"type","selector":"input","value":"q"}, {"action":"scroll","value":"800"},
     /// {"action":"wait","value":"1500"}, {"action":"wait_for_selector","selector":".grid"}. Any
@@ -239,6 +239,15 @@ struct FetchOptions {
     /// an array.
     #[serde(default)]
     schema: Option<Value>,
+    /// Request timeout in milliseconds (1000-60000).
+    #[serde(default)]
+    timeout: Option<u64>,
+    /// CSS selector to wait for before returning a browser-rendered page.
+    #[serde(default)]
+    wait_selector: Option<String>,
+    /// Extra browser settle wait in milliseconds (0-60000).
+    #[serde(default)]
+    wait_ms: Option<u64>,
     /// HTTP method for API-style targets; browser paths are GET only. Default GET.
     #[serde(default)]
     method: Option<HttpMethod>,
@@ -255,10 +264,13 @@ impl FetchOptions {
             proxy_strategy: self.proxy_strategy.map(ProxyStrategy::as_str),
             only_main_content: self.only_main_content,
             geolocation: self.geolocation.as_deref(),
-            tag: self.tag.as_deref(),
+            tag: self.tag.as_ref(),
             actions: self.actions.as_deref(),
             prompt: self.prompt.as_deref(),
             schema: self.schema.as_ref(),
+            timeout: self.timeout,
+            wait_selector: self.wait_selector.as_deref(),
+            wait_ms: self.wait_ms,
             method: self.method.map(HttpMethod::as_str).unwrap_or("GET"),
             body: self.body.as_ref(),
         }
@@ -329,7 +341,7 @@ struct CrawlStartParams {
     /// Maximum pages (1-10000). Default 200. Confirm scope with the user for big sites.
     #[serde(default = "default_crawl_limit")]
     limit: u32,
-    /// Formats to store, any of markdown, html, clean_html, links, screenshot. Default ["markdown"].
+    /// Formats to store, any of markdown, html, clean_html, links, screenshot, screenshot_full_page. Default ["markdown"].
     #[serde(default)]
     output: Option<Vec<String>>,
     /// Regexes; only matching paths are crawled.
@@ -370,7 +382,7 @@ struct CrawlStartParams {
     actions: Option<Vec<Value>>,
     /// Up to 25 labels echoed in usage logs.
     #[serde(default)]
-    tag: Option<Vec<String>>,
+    tag: Option<client::TagInput>,
     /// Address notified when the crawl completes.
     #[serde(default)]
     email: Option<String>,
@@ -808,7 +820,7 @@ impl PlineServer {
                 params.limit
             )));
         }
-        let mut body = client::to_batch_casing(options);
+        let mut body = options;
         body.insert("urls".into(), json!(urls));
         body.insert("limit".into(), json!(params.limit));
         if let Some(session_id) = params.session_id.filter(|id| !id.trim().is_empty()) {
@@ -847,15 +859,7 @@ impl PlineServer {
         body.insert("url".into(), json!(params.url.trim()));
         body.insert("limit".into(), json!(params.limit));
         body.insert("sitemap".into(), json!(params.sitemap.as_str()));
-        body.insert(
-            "output".into(),
-            Value::Object(
-                outputs
-                    .iter()
-                    .map(|format| (format.clone(), json!(true)))
-                    .collect(),
-            ),
-        );
+        body.insert("output".into(), json!(outputs));
         if let Some(paths) = params.include_paths.filter(|paths| !paths.is_empty()) {
             body.insert("includePaths".into(), json!(paths));
         }
@@ -906,12 +910,17 @@ impl PlineServer {
             }
             per_page.insert("actions".into(), json!(actions));
         }
-        let tags = client::validate_tags(client::csv_or_list(params.tag.as_deref()))?;
+        let tag_values = params
+            .tag
+            .as_ref()
+            .map(client::TagInput::values)
+            .unwrap_or_default();
+        let tags = client::validate_tags(client::csv_or_list(Some(&tag_values)))?;
         if !tags.is_empty() {
             per_page.insert("tag".into(), json!(tags));
         }
         if params.js_render == Some(false)
-            && (has_actions || outputs.iter().any(|o| o == "screenshot"))
+            && (has_actions || outputs.iter().any(|o| o.starts_with("screenshot")))
         {
             return Err(PlineError::Invalid(
                 "js_render=false cannot be combined with actions or screenshot output; they need a browser".into(),
