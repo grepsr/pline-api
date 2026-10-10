@@ -3,7 +3,7 @@
     {
       "type": "promptString",
       "id": "pline-base-url",
-      "description": "pline.ai API base URL (public HTTPS address supplied by the service operator)",
+      "description": "pline.ai API base URL (https://apix.pline.ai/v1)",
       "default": "https://apix.pline.ai/v1"
     },
     {
