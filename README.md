@@ -45,9 +45,10 @@ Every MCP client takes the same configuration:
 |---|---|
 | Claude Code | `claude mcp add pline.ai -e PLINE_BASE_URL=https://api.example.com/v1 -e PLINE_API_KEY=your-own-api-key -- npx -y pline-api` |
 | Claude Code plugin (skill + server) | `claude plugin marketplace add grepsr/pline-api` then `claude plugin install pline-ai@pline-ai`; Claude Code prompts for the URL and key |
-| Cursor | [![Add pline.ai to Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](cursor://anysphere.cursor-deeplink/mcp/install?name=pline.ai&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsInBsaW5lLW1jcCJdLCJlbnYiOnsiUExJTkVfQkFTRV9VUkwiOiJodHRwczovL2FwaS5wbGluZS5haSIsIlBMSU5FX0FQSV9LRVkiOiJ5b3VyLW93bi1hcGkta2V5In19) then replace `your-own-api-key` in Cursor's MCP settings |
+| Cursor | [![Add pline.ai to Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](cursor://anysphere.cursor-deeplink/mcp/install?name=pline.ai&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsInBsaW5lLWFwaSJdLCJlbnYiOnsiUExJTkVfQkFTRV9VUkwiOiJodHRwczovL2FwaXgucGxpbmUuYWkvdjEiLCJQTElORV9BUElfS0VZIjoieW91ci1vd24tYXBpLWtleSJ9fQ==) then replace `your-own-api-key` in Cursor's MCP settings |
 | VS Code | [![Install pline.ai in VS Code](https://img.shields.io/badge/VS_Code-Install_Server-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://vscode.dev/redirect?url=vscode:mcp/install?%7B%22name%22%3A%22pline.ai%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22pline-api%22%5D%2C%22env%22%3A%7B%22PLINE_BASE_URL%22%3A%22%24%7Binput%3Apline-base-url%7D%22%2C%22PLINE_API_KEY%22%3A%22%24%7Binput%3Apline-api-key%7D%22%7D%2C%22inputs%22%3A%5B%7B%22id%22%3A%22pline-base-url%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22pline.ai%20API%20base%20URL%22%2C%22default%22%3A%22https%3A%2F%2Fapix.pline.ai%2Fv1%22%7D%2C%7B%22id%22%3A%22pline-api-key%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22pline.ai%20API%20key%22%2C%22password%22%3Atrue%7D%5D%7D) [![Install pline.ai in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install_Server-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect?url=vscode-insiders:mcp/install?%7B%22name%22%3A%22pline.ai%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22pline-api%22%5D%2C%22env%22%3A%7B%22PLINE_BASE_URL%22%3A%22%24%7Binput%3Apline-base-url%7D%22%2C%22PLINE_API_KEY%22%3A%22%24%7Binput%3Apline-api-key%7D%22%7D%2C%22inputs%22%3A%5B%7B%22id%22%3A%22pline-base-url%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22pline.ai%20API%20base%20URL%22%2C%22default%22%3A%22https%3A%2F%2Fapix.pline.ai%2Fv1%22%7D%2C%7B%22id%22%3A%22pline-api-key%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22pline.ai%20API%20key%22%2C%22password%22%3Atrue%7D%5D%7D); VS Code prompts for the URL and key |
-| Windsurf, Claude Desktop, Codex, others | Paste the JSON above into the client's MCP configuration; see [MCP setup](#mcp-setup) for each file's location |
+| Codex (CLI, IDE extension, app) | `codex mcp add pline-api --env PLINE_BASE_URL=https://api.example.com/v1 --env PLINE_API_KEY=your-own-api-key -- npx -y pline-api`; see [Codex](#codex-1) to keep the key out of the config file |
+| Windsurf, Claude Desktop, others | Paste the JSON above into the client's MCP configuration; see [MCP setup](#mcp-setup) for each file's location |
 
 Opening this repository as a workspace configures the server automatically through
 [`.cursor/mcp.json`](.cursor/mcp.json) and [`.vscode/mcp.json`](.vscode/mcp.json).
@@ -472,14 +473,31 @@ Inside this repository, `.mcp.json` runs the server from source through Cargo in
 
 ### Codex
 
-Add to `~/.codex/config.toml`:
+The Codex CLI, IDE extension, and app share `~/.codex/config.toml` (or `.codex/config.toml` in a
+trusted project). Add the server with one command:
+
+```sh
+codex mcp add pline-api --env PLINE_BASE_URL=https://api.example.com/v1 --env PLINE_API_KEY=your-own-api-key -- npx -y pline-api
+```
+
+That writes the key into `config.toml`. To keep it there only as a name, edit the file instead and
+let Codex forward `PLINE_API_KEY` from the environment it starts in (Codex does not pass its
+environment to MCP servers unless a variable is listed in `env_vars`):
 
 ```toml
-[mcp_servers.pline]
+[mcp_servers.pline-api]
 command = "npx"
 args = ["-y", "pline-api"]
-env = { PLINE_BASE_URL = "https://api.example.com/v1", PLINE_API_KEY = "your-own-api-key" }
+env_vars = ["PLINE_API_KEY"]
+
+[mcp_servers.pline-api.env]
+PLINE_BASE_URL = "https://api.example.com/v1"
 ```
+
+Check it with `codex mcp list`. Codex can read this repository's Claude Code marketplace
+(`codex plugin marketplace add grepsr/pline-api`), but it does not resolve the plugin's
+`${user_config.*}` placeholders, so the server would start with those literal strings as its URL
+and key. Use the configuration above for the server and [the skill steps](#codex) for the skill.
 
 ### Docker
 
