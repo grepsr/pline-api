@@ -14,12 +14,28 @@ choose a workspace API key, and connect at the hosted `/mcp` URL; see
 
 ## Quick install
 
-Both integrations install with `npx` and need only Node.js 18+ (or Docker, see below):
+The two integrations are installed separately; use either or both.
+
+**Agent skill** (instructions plus a Python CLI the agent runs):
 
 ```sh
-npx skills add grepsr/pline-api          # the agent skill, into Claude Code, Cursor, Codex, and more
-npx -y pline-api                         # the MCP server (your MCP client runs this for you)
+npx skills add grepsr/pline-api
 ```
+
+This copies [`skills/pline-api`](skills/pline-api/SKILL.md) from this GitHub repository into your
+agent's skills folder (Claude Code, Cursor, Codex, and more). `skills` is the
+[skills.sh](https://skills.sh) installer, not a pline package; the skill is not published to npm.
+Running it needs Python 3.10+ and the `PLINE_BASE_URL`/`PLINE_API_KEY` variables; see
+[Skill setup](#skill-setup).
+
+**MCP server** (ten tools for any MCP client):
+
+```sh
+npx -y pline-api
+```
+
+You do not run this yourself: add it to your MCP client's configuration below and the client starts
+it. It needs Node.js 18+ (or Docker).
 
 The MCP server is the [`pline-api`](https://www.npmjs.com/package/pline-api) npm package, listed in the
 [official MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.grepsr/pline-api)
@@ -81,11 +97,12 @@ shell or client settings. Git ignores `.env`, local session files, and build out
 The `pline-api` skill teaches an agent how to choose an API operation, reuse scrape sessions,
 extract structured data, poll background jobs, and save results. It uses connected pline.ai MCP
 tools when available; otherwise it runs the bundled Python client. A skill-only installation
-requires **Python 3.10+, Git, a pline.ai API key, and the operator's API base URL**. It does not
+requires **Python 3.10+, Git, and a pline.ai API key**; the API base URL is `https://apix.pline.ai/v1`. It does not
 require Rust, a compiled MCP binary, or pip packages.
 
-The quickest install uses the [`skills`](https://skills.sh) CLI, which copies the skill into the
-right folder for each agent it detects (add `-g` for a user-wide install, `-a cursor` to pick agents):
+The quickest install uses the [`skills`](https://skills.sh) CLI, which copies the skill from this GitHub
+repository (not from npm) into the right folder for each agent it detects (add `-g` for a user-wide
+install, `-a cursor` to pick agents):
 
 ```sh
 npx skills add grepsr/pline-api
