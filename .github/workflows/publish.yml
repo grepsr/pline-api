@@ -109,7 +109,7 @@ jobs:
           version="${RELEASE_TAG#v}"
           for attempt in 1 2 3 4 5 6; do
             if npm view "pline-api@$version" version >/dev/null 2>&1 && \
-               npm view "pline-api-linux-x64@$version" version >/dev/null 2>&1; then
+               npm view "@pline/api-linux-x64@$version" version >/dev/null 2>&1; then
               break
             fi
             sleep 20

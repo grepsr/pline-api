@@ -25,11 +25,11 @@ MAIN = json.loads((ROOT / 'npm/package.json').read_text(encoding='utf-8'))
 # Keep in sync with PLATFORMS in npm/bin/pline-mcp.js and the matrix in release.yml.
 PLATFORMS = [
     # (npm package, node os, node cpu, cargo target, archive extension)
-    ('pline-api-darwin-arm64', 'darwin', 'arm64', 'aarch64-apple-darwin', 'tar.gz'),
-    ('pline-api-darwin-x64', 'darwin', 'x64', 'x86_64-apple-darwin', 'tar.gz'),
-    ('pline-api-linux-x64', 'linux', 'x64', 'x86_64-unknown-linux-gnu', 'tar.gz'),
-    ('pline-api-linux-arm64', 'linux', 'arm64', 'aarch64-unknown-linux-gnu', 'tar.gz'),
-    ('pline-api-win32-x64', 'win32', 'x64', 'x86_64-pc-windows-msvc', 'zip'),
+    ('@pline/api-darwin-arm64', 'darwin', 'arm64', 'aarch64-apple-darwin', 'tar.gz'),
+    ('@pline/api-darwin-x64', 'darwin', 'x64', 'x86_64-apple-darwin', 'tar.gz'),
+    ('@pline/api-linux-x64', 'linux', 'x64', 'x86_64-unknown-linux-gnu', 'tar.gz'),
+    ('@pline/api-linux-arm64', 'linux', 'arm64', 'aarch64-unknown-linux-gnu', 'tar.gz'),
+    ('@pline/api-win32-x64', 'win32', 'x64', 'x86_64-pc-windows-msvc', 'zip'),
 ]
 
 
@@ -70,7 +70,8 @@ def build(dist, out):
         if sums.get(archive.name) != digest:
             raise SystemExit(f'checksum mismatch for {archive.name}: SHA256SUMS={sums.get(archive.name)} actual={digest}')
 
-        package_dir = out / name
+        # Scoped names (@pline/api-x) would nest a directory; keep one flat directory per package.
+        package_dir = out / name.lstrip('@').replace('/', '-')
         if package_dir.exists():
             shutil.rmtree(package_dir)
         (package_dir / 'bin').mkdir(parents=True)
@@ -80,7 +81,7 @@ def build(dist, out):
         manifest = {
             'name': name,
             'version': version,
-            'description': f'{node_os}/{cpu} binary for the pline-mcp MCP server. Install `pline-mcp` instead of this package.',
+            'description': f'{node_os}/{cpu} binary for the pline-mcp MCP server. Install `pline-api` instead of this package.',
             'repository': MAIN['repository'],
             'homepage': MAIN['homepage'],
             'bugs': MAIN['bugs'],
@@ -114,7 +115,7 @@ def main():
         print(f'pline-api {MAIN["version"]} platform packages:')
         for name, node_os, cpu, target, ext in PLATFORMS:
             pinned = MAIN['optionalDependencies'].get(name)
-            print(f'  {name:26} {node_os:7} {cpu:6} {target:28} .{ext}  optionalDependency={pinned}')
+            print(f'  {name:24} {node_os:7} {cpu:6} {target:28} .{ext}  optionalDependency={pinned}')
             if pinned != MAIN['version']:
                 print(f'    !! optionalDependencies[{name}] is {pinned}, expected {MAIN["version"]}', file=sys.stderr)
                 return 1
