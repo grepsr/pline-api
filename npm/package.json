@@ -9,6 +9,7 @@
   },
   "files": [
     "bin/pline-mcp.js",
+    "lib/init.js",
     "README.md"
   ],
   "engines": {

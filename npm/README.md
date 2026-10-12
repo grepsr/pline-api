@@ -3,7 +3,17 @@
 MCP server for [pline.ai](https://github.com/grepsr/pline-api): scrape pages, crawl sites,
 batch-scrape URL lists, map a site's URLs, and search the web, all through your own pline.ai API key.
 
-No install step. Point any MCP client at `npx`:
+Set up every MCP client on your machine, plus the agent skill, in one step:
+
+```sh
+npx -y pline-api@latest init
+```
+
+It asks for your API key, registers the server with Claude Code, Codex, Cursor, VS Code, Claude
+Desktop, and Windsurf (merging and backing up existing configs), and installs the skill. Run
+`npx -y pline-api@latest init --help` for options.
+
+Or point any MCP client at `npx` yourself:
 
 ```json
 {

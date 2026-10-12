@@ -10,6 +10,8 @@
 //   2. The platform package installed through optionalDependencies, e.g. @pline/api-darwin-arm64.
 //   3. A cached download of the matching GitHub Release archive, verified against SHA256SUMS.
 //
+// `pline-api init` runs the interactive client setup in ../lib/init.js instead of the server.
+//
 // Everything this script prints goes to stderr: stdout is the MCP stdio channel.
 
 const { spawn, spawnSync } = require('node:child_process');
@@ -161,8 +163,21 @@ async function resolveBinary() {
 }
 
 async function main() {
+  const args = process.argv.slice(2);
+  if (args[0] === 'init') {
+    process.exit(await require('../lib/init').init(args.slice(1)));
+  }
+  // Run by hand in a terminal, the server just waits for MCP messages on stdin; say so.
+  if (!args.length && process.stdin.isTTY) {
+    log('this is the pline.ai MCP server; it waits for an MCP client on stdin and prints nothing.');
+    log('To add it to your MCP clients and install the agent skill, run: npx -y pline-api@latest init');
+    log('Press Ctrl+C to exit.');
+    if (!process.env.PLINE_API_KEY) {
+      log('PLINE_API_KEY is not set, so tool calls will fail until it is.');
+    }
+  }
   const binary = await resolveBinary();
-  const child = spawn(binary, process.argv.slice(2), { stdio: 'inherit', windowsHide: true });
+  const child = spawn(binary, args, { stdio: 'inherit', windowsHide: true });
 
   const forward = (signal) => () => {
     if (!child.killed) {
