@@ -55,3 +55,43 @@ jobs:
             --file mcp-server/Dockerfile \
             --tag "${ECR_REGISTRY}/pline-mcp:${VERSION}" \
             --push mcp-server
+
+      - name: Check out GitOps repository
+        env:
+          GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}
+        run: |
+          git clone --depth 1 "https://x-access-token:${GITOPS_TOKEN}@github.com/grepsr/pline-hades-gitops.git" gitops
+
+      - name: Update production image tag
+        working-directory: gitops
+        env:
+          RELEASE_TAG: ${{ inputs.version }}
+        run: |
+          IMAGE_TAG_FILE="apps/pline-hades/prod/pline-mcp/image-tag.yaml"
+
+          # This file contains only image.tag; quote it to preserve string tags.
+          printf 'image:\n  tag: "%s"\n' "${RELEASE_TAG}" > "${IMAGE_TAG_FILE}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${IMAGE_TAG_FILE}"
+
+          if git diff --cached --quiet; then
+            echo "Production image tag is already ${RELEASE_TAG}"
+            exit 0
+          fi
+
+          git commit -m "deploy(prod): pline-mcp ${RELEASE_TAG}"
+
+          # Other services may update the GitOps repository at the same time.
+          for attempt in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "GitOps push attempt ${attempt} failed"
+            sleep 5
+          done
+
+          echo "::error::Failed to push the production image tag to GitOps"
+          exit 1
