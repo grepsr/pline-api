@@ -78,8 +78,8 @@ docker run --rm -p 8080:8080 -e PLINE_BASE_URL=https://apix.pline.ai/v1 ghcr.io/
 
 ## Build from Git
 
-You need Git, a current stable Rust toolchain with Cargo, an API key, and the public HTTPS API base
-URL, `https://apix.pline.ai/v1`.
+You need Git, a current stable Rust toolchain with Cargo, and an API key. The server calls the public
+API at `https://apix.pline.ai/v1` unless `PLINE_BASE_URL` overrides it.
 
 From the repository root:
 
@@ -102,8 +102,8 @@ These environment-loading commands are for POSIX shells. On other platforms, set
 environment variables in your shell or MCP client configuration. The server does not load `.env`
 automatically; the file is ignored by Git.
 
-Use the public HTTPS API address, `https://apix.pline.ai/v1`. Internal deployment addresses are not reachable from
-a user's machine.
+`PLINE_BASE_URL` is optional and defaults to the public API, `https://apix.pline.ai/v1`. Internal
+deployment addresses are not reachable from a user's machine.
 
 ## Connect an MCP client
 

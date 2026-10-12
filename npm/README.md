@@ -30,8 +30,8 @@ Or point any MCP client at `npx` yourself:
 }
 ```
 
-`PLINE_API_KEY` is your key, sent to the API as `x-api-key`. `PLINE_BASE_URL` is the public HTTPS
-address of the pline.ai API, `https://apix.pline.ai/v1`.
+`PLINE_API_KEY` is your key, sent to the API as `x-api-key`. `PLINE_BASE_URL` is optional and
+defaults to the public pline.ai API, `https://apix.pline.ai/v1`.
 
 The package is a small launcher. The server is a native binary selected for your platform
 (macOS arm64 and x64, Linux x64 and arm64, Windows x64) through an optional dependency, with a
