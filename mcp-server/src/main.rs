@@ -1276,7 +1276,7 @@ usage: pline-mcp [--stdio | --http [ADDR]]
   --http [ADDR]   serve MCP over Streamable HTTP at ADDR (default 0.0.0.0:8080, or PLINE_MCP_HTTP_ADDR);
                   every request must carry the caller's pline.ai API key
 
-PLINE_BASE_URL must point at the pline.ai API in both modes.";
+PLINE_BASE_URL overrides the pline.ai API base URL (default https://apix.pline.ai/v1) in both modes.";
 
 enum Mode {
     Stdio,

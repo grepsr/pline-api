@@ -10,10 +10,11 @@ it needs Python 3.10+ and only the standard library.
 
 ## Configuration and paths
 
-The client requires `PLINE_BASE_URL` (the operator's public HTTPS API URL) and
-`PLINE_API_KEY` in its environment.
-If missing, ask the user to configure them locally; do not ask them to paste the key into chat.
-Never put the key in a URL, output, or committed file. Do not guess the API host.
+The client requires `PLINE_API_KEY` in its environment. It calls the public API at
+`https://apix.pline.ai/v1` unless `PLINE_BASE_URL` overrides it.
+If the key is missing, ask the user to set it locally (or run `npx -y pline-api@latest init`); do not
+ask them to paste the key into chat. Never put the key in a URL, output, or committed file. Do not
+point `PLINE_BASE_URL` at any other host unless the user configured it.
 
 Resolve `SKILL_DIR` to the **absolute directory containing this loaded SKILL.md**, wherever the
 skill is installed. Set that variable in each shell invocation below. Do not assume the current

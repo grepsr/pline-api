@@ -1,8 +1,10 @@
 # pline.ai API reference (exposed surface)
 
-Base URL: `$PLINE_BASE_URL`. Auth header on every request: `x-api-key: $PLINE_API_KEY`.
+Base URL: `$PLINE_BASE_URL`, default `https://apix.pline.ai/v1`. Auth header on every request:
+`x-api-key: $PLINE_API_KEY`. The curl examples below assume `PLINE_BASE_URL` is set.
 Optional `x-request-id` header: echoed back as `request_id` on `/scrape`; generated when absent.
-Errors are always `{"detail": "<message>"}` with a matching HTTP status.
+Errors carry a matching HTTP status and a JSON body, usually `{"code": "<CODE>", "message": "<text>"}`
+(for example `API_KEY_NOT_AUTHORIZED`); some validation errors use `{"detail": "<message>"}`.
 
 Casing is not uniform across endpoints, and unknown or mis-cased keys are rejected with `422`
 rather than silently ignored:

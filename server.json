@@ -23,8 +23,8 @@
       "environmentVariables": [
         {
           "name": "PLINE_BASE_URL",
-          "description": "Public HTTPS base URL of the pline.ai API (https://apix.pline.ai/v1).",
-          "isRequired": true,
+          "description": "pline.ai API base URL. Optional; defaults to https://apix.pline.ai/v1.",
+          "isRequired": false,
           "format": "string",
           "default": "https://apix.pline.ai/v1"
         },
@@ -85,8 +85,8 @@
       "environmentVariables": [
         {
           "name": "PLINE_BASE_URL",
-          "description": "Public HTTPS base URL of the pline.ai API (https://apix.pline.ai/v1).",
-          "isRequired": true,
+          "description": "pline.ai API base URL. Optional; defaults to https://apix.pline.ai/v1.",
+          "isRequired": false,
           "format": "string",
           "default": "https://apix.pline.ai/v1"
         },

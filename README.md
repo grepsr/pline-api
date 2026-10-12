@@ -14,7 +14,19 @@ choose a workspace API key, and connect at the hosted `/mcp` URL; see
 
 ## Quick install
 
-The two integrations are installed separately; use either or both.
+**One command** (Node.js 18+) sets up both integrations for every supported client it finds:
+
+```sh
+npx -y pline-api@latest init
+```
+
+It asks for your pline.ai API key (input hidden; or set `PLINE_API_KEY`), registers the MCP server
+with Claude Code, Codex, Cursor, VS Code, Claude Desktop, and Windsurf, and installs the agent skill
+with skills.sh. Existing config files are merged, never replaced, and backed up first; VS Code prompts
+for the key at first start instead of storing it. Useful options: `--agent cursor` (repeatable),
+`--mcp-only`, `--skill-only`, `--dry-run`, `--yes`; see `npx -y pline-api@latest init --help`.
+
+To install them separately instead, use either or both of the following.
 
 **Agent skill** (instructions plus a Python CLI the agent runs):
 
@@ -25,7 +37,8 @@ npx skills add grepsr/pline-api
 This copies [`skills/pline-api`](skills/pline-api/SKILL.md) from this GitHub repository into your
 agent's skills folder (Claude Code, Cursor, Codex, and more). `skills` is the
 [skills.sh](https://skills.sh) installer, not a pline package; the skill is not published to npm.
-Running it needs Python 3.10+ and the `PLINE_BASE_URL`/`PLINE_API_KEY` variables; see
+Running it needs Python 3.10+ and `PLINE_API_KEY` in the agent's environment (`PLINE_BASE_URL`
+defaults to `https://apix.pline.ai/v1`); see
 [Skill setup](#skill-setup).
 
 **MCP server** (ten tools for any MCP client):
@@ -59,7 +72,7 @@ Every MCP client takes the same configuration:
 
 | Client | One step |
 |---|---|
-| Claude Code | `claude mcp add pline.ai -e PLINE_BASE_URL=https://apix.pline.ai/v1 -e PLINE_API_KEY=your-own-api-key -- npx -y pline-api` |
+| Claude Code | `claude mcp add pline-ai -e PLINE_BASE_URL=https://apix.pline.ai/v1 -e PLINE_API_KEY=your-own-api-key -- npx -y pline-api` |
 | Claude Code plugin (skill + server) | `claude plugin marketplace add grepsr/pline-api` then `claude plugin install pline-ai@pline-ai`; Claude Code prompts for the URL and key |
 | Cursor | [![Add pline.ai to Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=pline.ai&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsInBsaW5lLWFwaSJdLCJlbnYiOnsiUExJTkVfQkFTRV9VUkwiOiJodHRwczovL2FwaXgucGxpbmUuYWkvdjEiLCJQTElORV9BUElfS0VZIjoieW91ci1vd24tYXBpLWtleSJ9fQ==) then replace `your-own-api-key` in Cursor's MCP settings |
 | VS Code | [![Install pline.ai in VS Code](https://img.shields.io/badge/VS_Code-Install_Server-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://vscode.dev/redirect?url=vscode:mcp/install?%7B%22name%22%3A%22pline.ai%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22pline-api%22%5D%2C%22env%22%3A%7B%22PLINE_BASE_URL%22%3A%22%24%7Binput%3Apline-base-url%7D%22%2C%22PLINE_API_KEY%22%3A%22%24%7Binput%3Apline-api-key%7D%22%7D%2C%22inputs%22%3A%5B%7B%22id%22%3A%22pline-base-url%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22pline.ai%20API%20base%20URL%22%2C%22default%22%3A%22https%3A%2F%2Fapix.pline.ai%2Fv1%22%7D%2C%7B%22id%22%3A%22pline-api-key%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22pline.ai%20API%20key%22%2C%22password%22%3Atrue%7D%5D%7D) [![Install pline.ai in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install_Server-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect?url=vscode-insiders:mcp/install?%7B%22name%22%3A%22pline.ai%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22pline-api%22%5D%2C%22env%22%3A%7B%22PLINE_BASE_URL%22%3A%22%24%7Binput%3Apline-base-url%7D%22%2C%22PLINE_API_KEY%22%3A%22%24%7Binput%3Apline-api-key%7D%22%7D%2C%22inputs%22%3A%5B%7B%22id%22%3A%22pline-base-url%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22pline.ai%20API%20base%20URL%22%2C%22default%22%3A%22https%3A%2F%2Fapix.pline.ai%2Fv1%22%7D%2C%7B%22id%22%3A%22pline-api-key%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22pline.ai%20API%20key%22%2C%22password%22%3Atrue%7D%5D%7D); VS Code prompts for the URL and key |
@@ -272,8 +285,8 @@ settings. The model API alone does not provide the local Python execution enviro
 
 ### Native Windows / PowerShell
 
-Run from the cloned repository. Set the variables for this PowerShell session; replace both
-placeholders with your operator's API URL and your pline.ai key:
+Run from the cloned repository. Set the variables for this PowerShell session; replace the key
+placeholder with your pline.ai key (`PLINE_BASE_URL` is optional and defaults to this URL):
 
 ```powershell
 $env:PLINE_BASE_URL = 'https://apix.pline.ai/v1'
@@ -363,7 +376,7 @@ skill location and reload the agent. Your source clone, outputs, and MCP configu
 | The skill is missing from the picker | Confirm the exact path ends in `skills/pline-api/SKILL.md`, with `scripts/` and `references/` alongside it. Open the right project and restart the client. |
 | Duplicate skill entries | Keep one intended copy per client/scope; Cursor can discover shared and Claude-compatible locations too. |
 | `python3` is not found | Install Python 3.10+ in the environment where the agent runs; on Windows use the available `python` or `py -3` command. |
-| `PLINE_BASE_URL` or `PLINE_API_KEY` is not set | Verify the agent's shell environment, not just your separate terminal. Load `.env` in the same command that executes the client if needed. |
+| `PLINE_API_KEY` is not set | Verify the agent's shell environment, not just your separate terminal. Load `.env` in the same command that executes the client if needed. |
 | The API returns 401 or 403 | Check the pline.ai key and API base URL. A DeepSeek or Claude credential is not a pline.ai credential. |
 | `scripts/pline.py` or the API reference cannot be found | Copy the complete skill directory and use an absolute installation path. |
 | The agent cannot run Python or reach the API | Enable the host's required command/network permissions, or use an already configured pline.ai MCP connection. |
@@ -475,7 +488,7 @@ Developer → Edit Config**) and restart Claude Desktop.
 ### Claude Code
 
 ```sh
-claude mcp add pline.ai -e PLINE_BASE_URL=https://apix.pline.ai/v1 -e PLINE_API_KEY=your-own-api-key -- npx -y pline-api
+claude mcp add pline-ai -e PLINE_BASE_URL=https://apix.pline.ai/v1 -e PLINE_API_KEY=your-own-api-key -- npx -y pline-api
 ```
 
 Or install the skill and the server together as the `pline-ai` plugin (Claude Code prompts for the

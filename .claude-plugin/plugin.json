@@ -40,9 +40,9 @@
     "pline_base_url": {
       "type": "string",
       "title": "pline.ai API base URL",
-      "description": "Public HTTPS base URL of the pline.ai API (https://apix.pline.ai/v1).",
+      "description": "pline.ai API base URL. Leave the default unless you were given another one.",
       "default": "https://apix.pline.ai/v1",
-      "required": true
+      "required": false
     },
     "pline_api_key": {
       "type": "string",

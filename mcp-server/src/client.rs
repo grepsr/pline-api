@@ -85,6 +85,16 @@ pub fn api_key_from_env() -> Result<String> {
     env_var("PLINE_API_KEY")
 }
 
+/// The public pline.ai API, used when `PLINE_BASE_URL` is unset or blank.
+pub const DEFAULT_BASE_URL: &str = "https://apix.pline.ai/v1";
+
+fn resolve_base_url(configured: Option<String>) -> String {
+    configured
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| DEFAULT_BASE_URL.to_string())
+}
+
 fn env_var(name: &str) -> Result<String> {
     std::env::var(name)
         .ok()
@@ -436,7 +446,7 @@ impl PlineClient {
         query: &[(&str, String)],
         headers: &[(&str, String)],
     ) -> Result<Value> {
-        let base = env_var("PLINE_BASE_URL")?;
+        let base = resolve_base_url(std::env::var("PLINE_BASE_URL").ok());
         let mut url =
             Url::parse(&format!("{}{}", base.trim_end_matches('/'), path)).map_err(|error| {
                 PlineError::Transport(format!("PLINE_BASE_URL is invalid: {error}"))
@@ -679,6 +689,16 @@ mod tests {
             method: "GET",
             body: None,
         }
+    }
+
+    #[test]
+    fn base_url_defaults_to_the_public_api() {
+        assert_eq!(resolve_base_url(None), DEFAULT_BASE_URL);
+        assert_eq!(resolve_base_url(Some("  ".into())), DEFAULT_BASE_URL);
+        assert_eq!(
+            resolve_base_url(Some(" http://127.0.0.1:9/v1 ".into())),
+            "http://127.0.0.1:9/v1"
+        );
     }
 
     #[test]

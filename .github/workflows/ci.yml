@@ -35,7 +35,10 @@ jobs:
           PLINE_MCP_BINARY: ${{ github.workspace }}/mcp-server/target/debug/pline-mcp
         run: |
           node --check npm/bin/pline-mcp.js
+          node --check npm/lib/init.js
           node npm/bin/pline-mcp.js --help
+          node npm/bin/pline-mcp.js init --help
+          python3 tests/init_test.py
           python3 tests/smoke.py npm/bin/pline-mcp.js
           python3 npm/build-platform-packages.py --check
           (cd npm && npm pack --dry-run)
