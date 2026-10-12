@@ -602,6 +602,7 @@ impl PlineServer {
         annotations(
             title = "Scrape one page",
             read_only_hint = false,
+            destructive_hint = false,
             open_world_hint = true
         )
     )]
@@ -621,7 +622,13 @@ impl PlineServer {
     /// output, error. Cheaper and more predictable than a crawl when the URLs are already known.
     #[tool(
         name = "batch_scrape_start",
-        annotations(title = "Start a batch scrape job", open_world_hint = true)
+        annotations(
+            title = "Start a batch scrape job",
+            read_only_hint = false,
+            destructive_hint = false,
+            idempotent_hint = false,
+            open_world_hint = true
+        )
     )]
     async fn batch_scrape_start(
         &self,
@@ -639,7 +646,13 @@ impl PlineServer {
     /// jobs are fine to leave running: report the id instead of blocking.
     #[tool(
         name = "batch_scrape_status",
-        annotations(title = "Check a batch scrape job", read_only_hint = false)
+        annotations(
+            title = "Check a batch scrape job",
+            read_only_hint = false,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
     )]
     async fn batch_scrape_status(
         &self,
@@ -656,7 +669,13 @@ impl PlineServer {
     /// Request cancellation of a batch scrape job (DELETE /batch/scrape/{id}). 409 if already finished.
     #[tool(
         name = "batch_scrape_cancel",
-        annotations(title = "Cancel a batch scrape job")
+        annotations(
+            title = "Cancel a batch scrape job",
+            read_only_hint = false,
+            destructive_hint = true,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
     )]
     async fn batch_scrape_cancel(
         &self,
@@ -674,7 +693,13 @@ impl PlineServer {
     /// a large site burns credits fast, and map_site shows what a crawl would hit for one cheap call.
     #[tool(
         name = "crawl_start",
-        annotations(title = "Start a site crawl job", open_world_hint = true)
+        annotations(
+            title = "Start a site crawl job",
+            read_only_hint = false,
+            destructive_hint = false,
+            idempotent_hint = false,
+            open_world_hint = true
+        )
     )]
     async fn crawl_start(
         &self,
@@ -692,7 +717,13 @@ impl PlineServer {
     /// are fine to leave running: report the id instead of blocking.
     #[tool(
         name = "crawl_status",
-        annotations(title = "Check a crawl job", read_only_hint = false)
+        annotations(
+            title = "Check a crawl job",
+            read_only_hint = false,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
     )]
     async fn crawl_status(
         &self,
@@ -704,7 +735,16 @@ impl PlineServer {
     }
 
     /// Request cancellation of a crawl job (DELETE /crawl/{id}). 409 if already finished.
-    #[tool(name = "crawl_cancel", annotations(title = "Cancel a crawl job"))]
+    #[tool(
+        name = "crawl_cancel",
+        annotations(
+            title = "Cancel a crawl job",
+            read_only_hint = false,
+            destructive_hint = true,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
+    )]
     async fn crawl_cancel(
         &self,
         extensions: Extensions,
@@ -759,7 +799,11 @@ impl PlineServer {
     /// Return the host -> session_id map this server is reusing for you. Empty until the first scrape.
     #[tool(
         name = "sessions_list",
-        annotations(title = "List remembered sessions", read_only_hint = true)
+        annotations(
+            title = "List remembered sessions",
+            read_only_hint = true,
+            open_world_hint = false
+        )
     )]
     async fn sessions_list(
         &self,

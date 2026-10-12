@@ -264,6 +264,11 @@ pub async fn serve(mut server: PlineServer, addr: &str) -> anyhow::Result<()> {
             "/.well-known/oauth-protected-resource/mcp",
             get(oauth_resource_metadata),
         )
+        // Clients that ignore the WWW-Authenticate hint fall back to the root metadata URL.
+        .route(
+            "/.well-known/oauth-protected-resource",
+            get(oauth_resource_metadata),
+        )
         .route("/health", get(health));
     let listener = tokio::net::TcpListener::bind(addr).await?;
     tracing::info!(%addr, "pline.ai MCP listening (Streamable HTTP at /mcp and /<api-key>/mcp)");
