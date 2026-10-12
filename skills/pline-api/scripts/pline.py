@@ -5,8 +5,8 @@ Exposed: POST /scrape, POST|GET|DELETE /crawl, POST|GET|DELETE /batch/scrape,
 POST /map, GET /serp.
 
 Configuration comes from the environment:
-    PLINE_BASE_URL   e.g. https://apix.pline.ai/v1
-    PLINE_API_KEY    sent as the x-api-key header
+    PLINE_API_KEY    sent as the x-api-key header (required)
+    PLINE_BASE_URL   API base URL (optional, default https://apix.pline.ai/v1)
 """
 
 from __future__ import annotations
@@ -99,11 +99,11 @@ def die(message: str, code: int = 1) -> NoReturn:
     raise SystemExit(code)
 
 
+DEFAULT_BASE_URL = "https://apix.pline.ai/v1"
+
+
 def base_url() -> str:
-    url = os.environ.get("PLINE_BASE_URL", "").strip().rstrip("/")
-    if not url:
-        die("PLINE_BASE_URL is not set (e.g. https://apix.pline.ai/v1)")
-    return url
+    return (os.environ.get("PLINE_BASE_URL", "").strip() or DEFAULT_BASE_URL).rstrip("/")
 
 
 def _lowercase_header_names(http_class: type) -> type:

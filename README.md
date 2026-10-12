@@ -37,7 +37,8 @@ npx skills add grepsr/pline-api
 This copies [`skills/pline-api`](skills/pline-api/SKILL.md) from this GitHub repository into your
 agent's skills folder (Claude Code, Cursor, Codex, and more). `skills` is the
 [skills.sh](https://skills.sh) installer, not a pline package; the skill is not published to npm.
-Running it needs Python 3.10+ and the `PLINE_BASE_URL`/`PLINE_API_KEY` variables; see
+Running it needs Python 3.10+ and `PLINE_API_KEY` in the agent's environment (`PLINE_BASE_URL`
+defaults to `https://apix.pline.ai/v1`); see
 [Skill setup](#skill-setup).
 
 **MCP server** (ten tools for any MCP client):
@@ -284,8 +285,8 @@ settings. The model API alone does not provide the local Python execution enviro
 
 ### Native Windows / PowerShell
 
-Run from the cloned repository. Set the variables for this PowerShell session; replace both
-placeholders with your operator's API URL and your pline.ai key:
+Run from the cloned repository. Set the variables for this PowerShell session; replace the key
+placeholder with your pline.ai key (`PLINE_BASE_URL` is optional and defaults to this URL):
 
 ```powershell
 $env:PLINE_BASE_URL = 'https://apix.pline.ai/v1'
@@ -375,7 +376,7 @@ skill location and reload the agent. Your source clone, outputs, and MCP configu
 | The skill is missing from the picker | Confirm the exact path ends in `skills/pline-api/SKILL.md`, with `scripts/` and `references/` alongside it. Open the right project and restart the client. |
 | Duplicate skill entries | Keep one intended copy per client/scope; Cursor can discover shared and Claude-compatible locations too. |
 | `python3` is not found | Install Python 3.10+ in the environment where the agent runs; on Windows use the available `python` or `py -3` command. |
-| `PLINE_BASE_URL` or `PLINE_API_KEY` is not set | Verify the agent's shell environment, not just your separate terminal. Load `.env` in the same command that executes the client if needed. |
+| `PLINE_API_KEY` is not set | Verify the agent's shell environment, not just your separate terminal. Load `.env` in the same command that executes the client if needed. |
 | The API returns 401 or 403 | Check the pline.ai key and API base URL. A DeepSeek or Claude credential is not a pline.ai credential. |
 | `scripts/pline.py` or the API reference cannot be found | Copy the complete skill directory and use an absolute installation path. |
 | The agent cannot run Python or reach the API | Enable the host's required command/network permissions, or use an already configured pline.ai MCP connection. |

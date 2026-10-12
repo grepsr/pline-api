@@ -370,8 +370,8 @@ async function init(argv) {
   const failed = results.filter(([ok]) => !ok).length;
   if (!opts.dryRun && opts.mcp) say('\nRestart your MCP clients to load pline.ai.');
   if (!opts.dryRun && skillAgents.length) {
-    say('The skill uses the pline.ai MCP tools when connected, otherwise its Python CLI, which reads');
-    say('PLINE_BASE_URL and PLINE_API_KEY from the shell environment.');
+    say('The skill uses the pline.ai MCP tools when connected. Without them it runs its Python CLI,');
+    say('which needs PLINE_API_KEY in your shell environment (the base URL defaults to the public API).');
   }
   return failed ? 1 : 0;
 }
