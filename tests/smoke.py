@@ -163,8 +163,14 @@ def check_mcp(workdir, env):
         tools = rpc('tools/list', {}, 2)['tools']
         assert len(tools) == 10
         for tool in tools:
+            annotations = tool.get('annotations', {})
             if tool['name'] in ('scrape', 'crawl_status', 'batch_scrape_status'):
-                assert not tool.get('annotations', {}).get('readOnlyHint', False), tool['name']
+                assert not annotations.get('readOnlyHint', False), tool['name']
+            # The Claude connector directory requires a title and a read-only or destructive hint.
+            assert annotations.get('title'), tool['name']
+            assert 'readOnlyHint' in annotations or 'destructiveHint' in annotations, tool['name']
+            if tool['name'].endswith('_cancel'):
+                assert annotations.get('destructiveHint') is True, tool['name']
         assert {r['uri'] for r in rpc('resources/list', {}, 3)['resources']} == {'pline://guide', 'pline://reference'}
         for index, uri in enumerate(('pline://guide', 'pline://reference'), 4):
             assert 'pline.ai' in rpc('resources/read', {'uri': uri}, index)['contents'][0]['text']
@@ -288,6 +294,9 @@ def check_http(workdir, env):
         for method in ('GET', 'DELETE'):
             assert request(method, key='other-dummy-key', headers={'Mcp-Session-Id': 'foreign-session'})[0] == 405
         assert request('POST', key=None)[0] == 401
+        # OAuth metadata must be reachable without a key, at the hinted and the root well-known URL.
+        for path in ('/.well-known/oauth-protected-resource/mcp', '/.well-known/oauth-protected-resource'):
+            assert request('GET', key=None, path=path)[0] == 404, path  # not configured here, but not 401
         assert len(rpc('tools/list', {}, key=None,
                        headers={'Authorization': 'Bearer smoke-dummy-key'})['tools']) == 10
         assert len(rpc('resources/list', {})['resources']) == 2
