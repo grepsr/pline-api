@@ -8,25 +8,65 @@ API key and call the same hosted scraping API. The scraping backend is not part 
 | [pline-api skill](skills/pline-api/SKILL.md) | Agent instructions, API reference, Python CLI for scrape, batch, crawl, map, and search | Python 3.10+; no pip dependencies |
 | [MCP server](mcp-server/README.md) | Ten tools over local stdio; embedded usage guide and API reference | `npx -y pline-api` (Node.js 18+); also a Docker image, prebuilt binaries, or a Cargo source build |
 
+**Fastest setup:** run `npx -y pline-api@latest init` and enter your API key. It configures every
+supported MCP client on your machine and installs the skill; see [Quick install](#quick-install).
+
 For remote agents, the MCP server also supports Streamable HTTP with Pline OAuth. Users sign in,
 choose a workspace API key, and connect at the hosted `/mcp` URL; see
 [`mcp-server/docs/oauth-hosting.md`](mcp-server/docs/oauth-hosting.md) for setup.
 
 ## Quick install
 
-**One command** (Node.js 18+) sets up both integrations for every supported client it finds:
+### One command: `init`
+
+Needs Node.js 18+. Run it in a terminal:
 
 ```sh
 npx -y pline-api@latest init
 ```
 
-It asks for your pline.ai API key (input hidden; or set `PLINE_API_KEY`), registers the MCP server
-with Claude Code, Codex, Cursor, VS Code, Claude Desktop, and Windsurf, and installs the agent skill
-with skills.sh. Existing config files are merged, never replaced, and backed up first; VS Code prompts
-for the key at first start instead of storing it. Useful options: `--agent cursor` (repeatable),
-`--mcp-only`, `--skill-only`, `--dry-run`, `--yes`; see `npx -y pline-api@latest init --help`.
+`init` finds the MCP clients on your machine, shows what it will change, asks you to confirm, and
+asks for your pline.ai API key (input hidden; or set `PLINE_API_KEY` first). Then it:
 
-To install them separately instead, use either or both of the following.
+| Client | What `init` does | Where the key is kept |
+|---|---|---|
+| Claude Code | `claude mcp add pline-ai --scope user …` | Claude Code's user config |
+| Codex | `codex mcp add pline-api …` | `~/.codex/config.toml` |
+| Cursor | adds `pline.ai` to `~/.cursor/mcp.json` | that file |
+| VS Code | adds `pline.ai` to your user `mcp.json` | not stored; VS Code asks on first start |
+| Claude Desktop | adds `pline.ai` to `claude_desktop_config.json` (macOS, Windows) | that file |
+| Windsurf | adds `pline.ai` to `~/.codeium/windsurf/mcp_config.json` | that file |
+
+It also installs the [agent skill](#skill-setup) for those agents with skills.sh. Existing config
+files are merged, never replaced: other servers stay, a `*.pline-backup-<time>` copy is written first,
+and files that are not plain JSON (for example with comments) are left alone and reported. Restart
+your clients afterwards.
+
+| Option | Effect |
+|---|---|
+| `--agent <id>` | Only this client; repeat for several: `claude-code`, `codex`, `cursor`, `vscode`, `claude-desktop`, `windsurf` |
+| `--mcp-only` / `--skill-only` | Set up just the MCP server, or just the skill |
+| `--dry-run` | Show what would change without changing anything |
+| `--yes` | Skip the confirmation (needed when not running in a terminal) |
+| `--base-url <url>` | Use another API base URL (default `https://apix.pline.ai/v1`) |
+
+```sh
+npx -y pline-api@latest init --agent cursor --agent claude-code   # only these clients
+npx -y pline-api@latest init --dry-run                            # preview, change nothing
+PLINE_API_KEY=your-key npx -y pline-api@latest init --yes         # non-interactive (scripts, CI)
+```
+
+Run `init` again at any time to change the key or add a newly installed client; it updates the
+existing `pline` entries in place. To remove pline.ai, delete the `pline.ai` / `pline-ai` /
+`pline-api` entry from each client (`claude mcp remove pline-ai --scope user`,
+`codex mcp remove pline-api`) and run `npx skills remove pline-api -g`.
+
+`npx -y pline-api` on its own is the MCP server, not the installer: run by hand it only waits for an
+MCP client. Use `init` to set things up.
+
+### Install separately
+
+To set up the two integrations by hand instead, use either or both of the following.
 
 **Agent skill** (instructions plus a Python CLI the agent runs):
 
@@ -113,7 +153,9 @@ tools when available; otherwise it runs the bundled Python client. A skill-only 
 requires **Python 3.10+, Git, and a pline.ai API key**; the API base URL is `https://apix.pline.ai/v1`. It does not
 require Rust, a compiled MCP binary, or pip packages.
 
-The quickest install uses the [`skills`](https://skills.sh) CLI, which copies the skill from this GitHub
+`npx -y pline-api@latest init` installs the skill together with the MCP server
+(`--skill-only` for just the skill). To install the skill on its own, use the
+[`skills`](https://skills.sh) CLI, which copies the skill from this GitHub
 repository (not from npm) into the right folder for each agent it detects (add `-g` for a user-wide
 install, `-a cursor` to pick agents):
 
@@ -376,6 +418,7 @@ skill location and reload the agent. Your source clone, outputs, and MCP configu
 | The skill is missing from the picker | Confirm the exact path ends in `skills/pline-api/SKILL.md`, with `scripts/` and `references/` alongside it. Open the right project and restart the client. |
 | Duplicate skill entries | Keep one intended copy per client/scope; Cursor can discover shared and Claude-compatible locations too. |
 | `python3` is not found | Install Python 3.10+ in the environment where the agent runs; on Windows use the available `python` or `py -3` command. |
+| `npx -y pline-api` seems to hang | That command is the MCP server and waits for a client. Run `npx -y pline-api@latest init` to set up your clients instead. |
 | `PLINE_API_KEY` is not set | Verify the agent's shell environment, not just your separate terminal. Load `.env` in the same command that executes the client if needed. |
 | The API returns 401 or 403 | Check the pline.ai key and API base URL. A DeepSeek or Claude credential is not a pline.ai credential. |
 | `scripts/pline.py` or the API reference cannot be found | Copy the complete skill directory and use an absolute installation path. |
@@ -418,6 +461,9 @@ Extract the archive into a permanent folder and use the executable's absolute pa
 configuration below. Windows uses `pline-mcp.exe`; macOS and Linux use `pline-mcp`.
 
 ## MCP setup
+
+`npx -y pline-api@latest init` does everything in this section for you (see
+[Quick install](#quick-install)). The per-client steps below are for manual setup.
 
 The server runs locally as a stdio process that your MCP client starts; it calls the hosted
 pline.ai API over HTTPS with your key. `npx -y pline-api` downloads the
@@ -572,6 +618,7 @@ The executable is `pline-mcp`; its public MCP identity is `pline.ai`. Streamable
 
 `npx -y pline-api` resolves the latest published version on each start, so npm installs need no
 action; pin `pline-api@<version>` in the client configuration if you want to control upgrades.
+To change your API key or add a client you installed later, run `npx -y pline-api@latest init` again.
 For a prebuilt installation, download the new release, verify its checksum, and replace the
 installed executable. Reconnect your MCP client after updating.
 
