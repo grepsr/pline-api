@@ -56,11 +56,25 @@ jobs:
             --tag "${ECR_REGISTRY}/pline-mcp:${VERSION}" \
             --push mcp-server
 
+      - name: Create GitOps GitHub App token
+        id: gitops-app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          # Credentials for the argocd-pusher-grepsr GitHub App.
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: grepsr
+          repositories: pline-hades-gitops
+          permission-contents: write
+
       - name: Check out GitOps repository
-        env:
-          GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}
-        run: |
-          git clone --depth 1 "https://x-access-token:${GITOPS_TOKEN}@github.com/grepsr/pline-hades-gitops.git" gitops
+        uses: actions/checkout@v4
+        with:
+          repository: grepsr/pline-hades-gitops
+          ref: main
+          path: gitops
+          fetch-depth: 0
+          token: ${{ steps.gitops-app-token.outputs.token }}
 
       - name: Update production image tag
         working-directory: gitops
