@@ -1,0 +1,103 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.grepsr/pline-api",
+  "title": "pline.ai",
+  "description": "Scrape, crawl, batch-scrape, map, and search the web through the hosted pline.ai API.",
+  "websiteUrl": "https://github.com/grepsr/pline-api#readme",
+  "repository": {
+    "url": "https://github.com/grepsr/pline-api",
+    "source": "github",
+    "subfolder": "mcp-server"
+  },
+  "version": "0.3.6",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "pline-api",
+      "version": "0.3.6",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "PLINE_BASE_URL",
+          "description": "pline.ai API base URL. Optional; defaults to https://apix.pline.ai/v1.",
+          "isRequired": false,
+          "format": "string",
+          "default": "https://apix.pline.ai/v1"
+        },
+        {
+          "name": "PLINE_API_KEY",
+          "description": "Your own pline.ai API key. Sent to the API as the x-api-key header.",
+          "isRequired": true,
+          "isSecret": true,
+          "format": "string"
+        }
+      ]
+    },
+    {
+      "registryType": "oci",
+      "identifier": "ghcr.io/grepsr/pline-mcp:0.3.6",
+      "runtimeHint": "docker",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "run",
+          "description": "Run a container from the image."
+        },
+        {
+          "type": "named",
+          "name": "-i",
+          "description": "Keep stdin open so the MCP client can talk to the server over stdio."
+        },
+        {
+          "type": "named",
+          "name": "--rm",
+          "description": "Remove the container when the MCP client disconnects."
+        },
+        {
+          "type": "named",
+          "name": "-e",
+          "value": "PLINE_BASE_URL",
+          "description": "Pass the pline.ai API base URL from the client environment into the container.",
+          "isRepeated": true
+        },
+        {
+          "type": "named",
+          "name": "-e",
+          "value": "PLINE_API_KEY",
+          "description": "Pass the caller's pline.ai API key from the client environment into the container.",
+          "isRepeated": true
+        }
+      ],
+      "packageArguments": [
+        {
+          "type": "named",
+          "name": "--stdio",
+          "description": "Serve MCP over stdio instead of the image's default Streamable HTTP listener."
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "PLINE_BASE_URL",
+          "description": "pline.ai API base URL. Optional; defaults to https://apix.pline.ai/v1.",
+          "isRequired": false,
+          "format": "string",
+          "default": "https://apix.pline.ai/v1"
+        },
+        {
+          "name": "PLINE_API_KEY",
+          "description": "Your own pline.ai API key. Sent to the API as the x-api-key header.",
+          "isRequired": true,
+          "isSecret": true,
+          "format": "string"
+        }
+      ]
+    }
+  ]
+}

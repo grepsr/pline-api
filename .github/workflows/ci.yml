@@ -1,0 +1,51 @@
+name: Check MCP and skill
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: mcp-server -> target
+      - run: cargo fmt --manifest-path mcp-server/Cargo.toml -- --check
+      - run: cargo clippy --manifest-path mcp-server/Cargo.toml --locked --all-targets --all-features -- -D warnings
+      - run: cargo test --manifest-path mcp-server/Cargo.toml --locked
+      - run: cargo build --manifest-path mcp-server/Cargo.toml --locked
+      - run: python3 tests/smoke.py
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 'lts/*'
+      - name: Smoke test the npm launcher against the local build
+        env:
+          PLINE_MCP_BINARY: ${{ github.workspace }}/mcp-server/target/debug/pline-mcp
+        run: |
+          node --check npm/bin/pline-mcp.js
+          node --check npm/lib/init.js
+          node npm/bin/pline-mcp.js --help
+          node npm/bin/pline-mcp.js init --help
+          python3 tests/init_test.py
+          python3 tests/smoke.py npm/bin/pline-mcp.js
+          python3 npm/build-platform-packages.py --check
+          (cd npm && npm pack --dry-run)
+      - name: Check published metadata
+        run: |
+          python3 tests/check_versions.py
+          python3 tests/check_plugin.py
+          python3 -c 'import json, sys; [json.load(open(p)) for p in sys.argv[1:]]; print("JSON OK:", *sys.argv[1:])' \
+            server.json glama.json .mcp.json .cursor/mcp.json .vscode/mcp.json \
+            plugin/.claude-plugin/plugin.json .claude-plugin/marketplace.json npm/package.json

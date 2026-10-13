@@ -1,0 +1,30 @@
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "pline-base-url",
+      "description": "pline.ai API base URL (https://apix.pline.ai/v1)",
+      "default": "https://apix.pline.ai/v1"
+    },
+    {
+      "type": "promptString",
+      "id": "pline-api-key",
+      "description": "Your pline.ai API key",
+      "password": true
+    }
+  ],
+  "servers": {
+    "pline.ai": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "pline-api"
+      ],
+      "env": {
+        "PLINE_BASE_URL": "${input:pline-base-url}",
+        "PLINE_API_KEY": "${input:pline-api-key}"
+      }
+    }
+  }
+}

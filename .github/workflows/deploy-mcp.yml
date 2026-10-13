@@ -1,0 +1,111 @@
+name: Deploy Pline MCP to production
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Published Pline MCP release tag (for example v0.2.0)
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: prod-pline-mcp-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - name: Validate release tag
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Expected a vX.Y.Z release tag"; exit 1; }
+
+      - name: Check out release
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.version }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+          role-to-assume: ${{ secrets.AWS_GREPSR_OIDC_ROLE_ARN }}
+
+      - name: Log in to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build and push production image
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            --file mcp-server/Dockerfile \
+            --tag "${ECR_REGISTRY}/pline-mcp:${VERSION}" \
+            --push mcp-server
+
+      - name: Create GitOps GitHub App token
+        id: gitops-app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          # Credentials for the argocd-pusher-grepsr GitHub App.
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: grepsr
+          repositories: pline-hades-gitops
+          permission-contents: write
+
+      - name: Check out GitOps repository
+        uses: actions/checkout@v4
+        with:
+          repository: grepsr/pline-hades-gitops
+          ref: main
+          path: gitops
+          fetch-depth: 0
+          token: ${{ steps.gitops-app-token.outputs.token }}
+
+      - name: Update production image tag
+        working-directory: gitops
+        env:
+          RELEASE_TAG: ${{ inputs.version }}
+        run: |
+          IMAGE_TAG_FILE="apps/pline-hades/prod/pline-mcp/image-tag.yaml"
+
+          # This file contains only image.tag; quote it to preserve string tags.
+          printf 'image:\n  tag: "%s"\n' "${RELEASE_TAG}" > "${IMAGE_TAG_FILE}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${IMAGE_TAG_FILE}"
+
+          if git diff --cached --quiet; then
+            echo "Production image tag is already ${RELEASE_TAG}"
+            exit 0
+          fi
+
+          git commit -m "deploy(prod): pline-mcp ${RELEASE_TAG}"
+
+          # Other services may update the GitOps repository at the same time.
+          for attempt in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "GitOps push attempt ${attempt} failed"
+            sleep 5
+          done
+
+          echo "::error::Failed to push the production image tag to GitOps"
+          exit 1

@@ -1,0 +1,4 @@
+interface:
+  display_name: "pline.ai API"
+  short_description: "Scrape, crawl, map, and search with pline.ai"
+  default_prompt: "Use $pline-api to fetch these pages and return their content as Markdown."

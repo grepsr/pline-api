@@ -1,0 +1,110 @@
+name: Build and publish stage pline-mcp
+'on':
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Published Pline MCP vX.Y.Z release
+        required: true
+        type: string
+permissions:
+  id-token: write
+  contents: read
+concurrency:
+  group: stage-pline-mcp-deploy
+  cancel-in-progress: false
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    environment: stage
+    steps:
+    - name: Validate published release
+      env:
+        VERSION: ${{ inputs.version }}
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        set -euo pipefail
+        [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+        draft="$(gh release view "$VERSION" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)"
+        [ "$draft" = false ]
+    - name: Check out source
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.version }}
+    - name: Validate stage inputs
+      env:
+        AWS_ROLE_ARN: ${{ vars.AWS_GREPSR_OIDC_ROLE_ARN }}
+        AWS_DEPLOY_REGION: ${{ vars.AWS_DEFAULT_REGION }}
+      run: |
+        set -euo pipefail
+        : "${AWS_ROLE_ARN:?Set stage AWS_GREPSR_OIDC_ROLE_ARN}"
+        : "${AWS_DEPLOY_REGION:?Set stage AWS_DEFAULT_REGION}"
+        [ "$AWS_ROLE_ARN" = "arn:aws:iam::897722692245:role/pline-hades-stage-github-ci" ]
+        [ "$AWS_DEPLOY_REGION" = us-east-1 ]
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v6
+      with:
+        role-to-assume: ${{ vars.AWS_GREPSR_OIDC_ROLE_ARN }}
+        aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+    - name: Log in to Amazon ECR
+      id: ecr-login
+      uses: aws-actions/amazon-ecr-login@v2
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v4
+    - name: Build and push stage image
+      env:
+        ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+        ECR_REPOSITORY: pline-mcp
+      run: |
+        set -euo pipefail
+        [ "$(aws sts get-caller-identity --query Account --output text)" = 897722692245 ]
+        [ "$ECR_REGISTRY" = 897722692245.dkr.ecr.us-east-1.amazonaws.com ]
+        SOURCE_SHA="$(git rev-parse HEAD)"
+        [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+        IMAGE_TAG="stage-${SOURCE_SHA}"
+        IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}"
+        BUILD_ARGS=()
+
+        docker buildx build mcp-server --platform linux/amd64 --file mcp-server/Dockerfile   ${BUILD_ARGS[@]+"${BUILD_ARGS[@]}"}   --cache-from "type=registry,ref=${IMAGE_URI}:stage-cache"   --cache-to "type=registry,ref=${IMAGE_URI}:stage-cache,mode=max"   --tag "${IMAGE_URI}:${IMAGE_TAG}" --push
+        echo "IMAGE_TAG=${IMAGE_TAG}" >> "$GITHUB_ENV"
+    - name: Create GitOps GitHub App token
+      id: gitops-app-token
+      uses: actions/create-github-app-token@v3
+      with:
+        app-id: ${{ vars.APP_ID }}
+        private-key: ${{ secrets.APP_PRIVATE_KEY }}
+        owner: grepsr
+        repositories: pline-hades-gitops
+        permission-contents: write
+    - name: Check out GitOps repository
+      uses: actions/checkout@v4
+      with:
+        repository: grepsr/pline-hades-gitops
+        ref: main
+        path: gitops
+        fetch-depth: 0
+        token: ${{ steps.gitops-app-token.outputs.token }}
+    - name: Update stage image tags
+      working-directory: gitops
+      env:
+        RELEASE_TAG: ${{ env.IMAGE_TAG }}
+        SERVICES: pline-mcp
+      run: |
+        set -euo pipefail
+        [[ "$RELEASE_TAG" =~ ^stage-[0-9a-f]{40}$ ]]
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        for service in ${SERVICES}; do
+          IMAGE_TAG_FILE="apps/pline-hades/stage/${service}/image-tag.yaml"
+          printf 'image:\n  tag: "%s"\n' "$RELEASE_TAG" > "$IMAGE_TAG_FILE"
+          git add "$IMAGE_TAG_FILE"
+        done
+        if git diff --cached --quiet; then exit 0; fi
+        git commit -m "deploy(stage): ${SERVICES} ${RELEASE_TAG}"
+        for attempt in 1 2 3; do
+          git pull --rebase origin main
+          if git push origin HEAD:main; then exit 0; fi
+          echo "GitOps push attempt ${attempt} failed"
+          sleep 5
+        done
+        echo "::error::Stage GitOps publication failed"
+        exit 1

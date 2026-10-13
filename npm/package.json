@@ -1,0 +1,47 @@
+{
+  "name": "pline-api",
+  "version": "0.3.6",
+  "description": "MCP server for pline.ai: scrape, crawl, batch-scrape, map, and search the web. Run with `npx -y pline-api`.",
+  "mcpName": "io.github.grepsr/pline-api",
+  "license": "MIT",
+  "bin": {
+    "pline-api": "bin/pline-mcp.js"
+  },
+  "files": [
+    "bin/pline-mcp.js",
+    "lib/init.js",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/grepsr/pline-api.git",
+    "directory": "npm"
+  },
+  "homepage": "https://github.com/grepsr/pline-api#readme",
+  "bugs": {
+    "url": "https://github.com/grepsr/pline-api/issues"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "pline",
+    "scraping",
+    "crawling",
+    "web-search",
+    "data-extraction",
+    "ai-agents"
+  ],
+  "optionalDependencies": {
+    "@pline/api-darwin-arm64": "0.3.6",
+    "@pline/api-darwin-x64": "0.3.6",
+    "@pline/api-linux-x64": "0.3.6",
+    "@pline/api-linux-arm64": "0.3.6",
+    "@pline/api-win32-x64": "0.3.6"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

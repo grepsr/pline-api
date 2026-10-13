@@ -1,0 +1,30 @@
+{
+  "name": "pline-ai",
+  "displayName": "pline.ai",
+  "icon": "./assets/icon.png",
+  "version": "0.3.6",
+  "description": "Scrape, crawl, batch-scrape, map, and search the web with pline.ai: the hosted pline.ai MCP server (sign in with your pline.ai account) plus an agent skill that knows when and how to use it.",
+  "author": {
+    "name": "Grepsr",
+    "email": "dev@grepsr.com",
+    "url": "https://github.com/grepsr"
+  },
+  "homepage": "https://pline.ai",
+  "repository": "https://github.com/grepsr/pline-api",
+  "license": "MIT",
+  "keywords": [
+    "scraping",
+    "crawling",
+    "web-search",
+    "data-extraction",
+    "pline",
+    "mcp"
+  ],
+  "mcpServers": {
+    "pline.ai": {
+      "type": "http",
+      "url": "https://mcp.pline.ai/mcp",
+      "args": []
+    }
+  }
+}
