@@ -62,8 +62,8 @@ fn decode_base64url(input: &str) -> Option<Vec<u8>> {
     Some(out)
 }
 
-/// The non-secret claims that explain why a token was refused (issuer, audience, client,
-/// expiry), decoded without verifying the signature. Never logs the token itself.
+/// The non-secret claims that explain why a token was refused (issuer, audience, role,
+/// client, expiry), decoded without verifying the signature. Never logs the token itself.
 fn token_claims_summary(token: &str) -> serde_json::Value {
     let claims = token
         .split('.')
@@ -74,6 +74,7 @@ fn token_claims_summary(token: &str) -> serde_json::Value {
         Some(claims) => json!({
             "iss": claims.get("iss"),
             "aud": claims.get("aud"),
+            "role": claims.get("role"),
             "client_id": claims.get("client_id"),
             "exp": claims.get("exp"),
             "has_sub": claims.get("sub").is_some(),
@@ -362,11 +363,12 @@ mod tests {
 
     #[test]
     fn summarises_claims_without_the_token() {
-        // {"iss":"https://x.supabase.co/auth/v1","aud":"authenticated","client_id":"c1","sub":"u1","exp":1}
-        let payload = "eyJpc3MiOiJodHRwczovL3guc3VwYWJhc2UuY28vYXV0aC92MSIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJjbGllbnRfaWQiOiJjMSIsInN1YiI6InUxIiwiZXhwIjoxfQ";
+        // {"iss":"https://x.supabase.co/auth/v1","aud":"authenticated","role":"authenticated","client_id":"c1","sub":"u1","exp":1}
+        let payload = "eyJpc3MiOiJodHRwczovL3guc3VwYWJhc2UuY28vYXV0aC92MSIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImNsaWVudF9pZCI6ImMxIiwic3ViIjoidTEiLCJleHAiOjF9";
         let token = format!("header.{payload}.signature");
         let summary = token_claims_summary(&token);
         assert_eq!(summary["aud"], "authenticated");
+        assert_eq!(summary["role"], "authenticated");
         assert_eq!(summary["client_id"], "c1");
         assert_eq!(summary["has_sub"], true);
         assert!(!summary.to_string().contains("signature"));
