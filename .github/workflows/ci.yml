@@ -45,6 +45,7 @@ jobs:
       - name: Check published metadata
         run: |
           python3 tests/check_versions.py
+          python3 tests/check_plugin.py
           python3 -c 'import json, sys; [json.load(open(p)) for p in sys.argv[1:]]; print("JSON OK:", *sys.argv[1:])' \
             server.json glama.json .mcp.json .cursor/mcp.json .vscode/mcp.json \
-            .claude-plugin/plugin.json .claude-plugin/marketplace.json npm/package.json
+            plugin/.claude-plugin/plugin.json .claude-plugin/marketplace.json npm/package.json

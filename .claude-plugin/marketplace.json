@@ -5,14 +5,13 @@
     "email": "dev@grepsr.com"
   },
   "metadata": {
-    "description": "pline.ai web scraping, crawling, mapping, and search for coding agents.",
-    "pluginRoot": "./"
+    "description": "pline.ai web scraping, crawling, mapping, and search for coding agents."
   },
   "plugins": [
     {
       "name": "pline-ai",
-      "source": "./",
-      "description": "Scrape, crawl, batch-scrape, map, and search the web through the hosted pline.ai API: an agent skill plus a local MCP server.",
+      "source": "./plugin",
+      "description": "Scrape, crawl, batch-scrape, map, and search the web with pline.ai: the hosted pline.ai MCP server plus an agent skill.",
       "version": "0.3.6",
       "category": "productivity",
       "tags": [

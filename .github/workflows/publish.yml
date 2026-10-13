@@ -168,9 +168,17 @@ jobs:
             exit 1
           fi
       - name: Install mcp-publisher
+        env:
+          # Pinned release and checksum (from registry_<version>_checksums.txt) for this x86_64 runner.
+          # To upgrade, change both together.
+          MCP_PUBLISHER_VERSION: v1.8.1
+          MCP_PUBLISHER_SHA256: a06c9096dcb9727c13555b6be26c7effa707b01f06a4c561ba7a3635443cf2cc
         run: |
           set -euo pipefail
-          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+          archive=mcp-publisher_linux_amd64.tar.gz
+          curl -fsSL -o "$archive" "https://github.com/modelcontextprotocol/registry/releases/download/${MCP_PUBLISHER_VERSION}/${archive}"
+          echo "${MCP_PUBLISHER_SHA256}  ${archive}" | sha256sum -c -
+          tar xzf "$archive" mcp-publisher
           ./mcp-publisher --help
       - name: Validate server.json
         run: ./mcp-publisher validate

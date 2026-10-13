@@ -1,7 +1,7 @@
 """Keep every published version string in step with mcp-server/Cargo.toml.
 
 Checked: server.json (MCP Registry), npm/package.json (npm launcher and its platform packages),
-.claude-plugin/plugin.json and marketplace.json (Claude Code plugin, including the npx pin),
+plugin/.claude-plugin/plugin.json and .claude-plugin/marketplace.json (Claude directory plugin),
 mcp-server/Dockerfile (registry ownership label), and both READMEs (release download links,
 archive names, pinned GHCR image tags and npm versions, one-click install links).
 
@@ -25,6 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 IMAGE = 'ghcr.io/grepsr/pline-mcp'
 NPM = 'pline-api'
 READMES = ('README.md', 'mcp-server/README.md')
+PLUGIN_MANIFEST = 'plugin/.claude-plugin/plugin.json'
 SEMVER = r'[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?'
 
 
@@ -77,11 +78,11 @@ def set_version(new):
         npm['optionalDependencies'][name] = new
     dump_json('npm/package.json', npm)
 
-    plugin = load_json('.claude-plugin/plugin.json')
+    plugin = load_json(PLUGIN_MANIFEST)
     plugin['version'] = new
     for mcp in plugin.get('mcpServers', {}).values():
         mcp['args'] = [re.sub(rf'^{re.escape(NPM)}@.*$', f'{NPM}@{new}', arg) for arg in mcp.get('args', [])]
-    dump_json('.claude-plugin/plugin.json', plugin)
+    dump_json(PLUGIN_MANIFEST, plugin)
 
     marketplace = load_json('.claude-plugin/marketplace.json')
     for entry in marketplace.get('plugins', []):
@@ -148,7 +149,7 @@ def check(tag):
     label = re.search(r'io\.modelcontextprotocol\.server\.name="([^"]+)"', read('mcp-server/Dockerfile'))
     expect('Dockerfile io.modelcontextprotocol.server.name label', label.group(1) if label else None, server['name'])
 
-    plugin = load_json('.claude-plugin/plugin.json')
+    plugin = load_json(PLUGIN_MANIFEST)
     expect('plugin.json version', plugin.get('version'))
     for name, mcp in plugin.get('mcpServers', {}).items():
         for arg in mcp.get('args', []):

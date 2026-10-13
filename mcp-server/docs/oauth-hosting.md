@@ -58,6 +58,6 @@ key fails through the normal Pline API key validation.
 4. Publish the Pline MCP `v0.2.0` release, then run **Deploy Pline MCP to production** with that tag
    to build and push the image into ECR.
 5. Merge the `pline-mcp` production app values in `pline-hades-gitops`; Argo CD then deploys the
-   image at `https://mcp.prd.pline.ai/mcp`.
+   image at `https://mcp.pline.ai/mcp` (also routed as `mcp.prd.pline.ai`).
 
 The MCP deploy workflow only publishes the ECR image. The GitOps change is the deployment action.

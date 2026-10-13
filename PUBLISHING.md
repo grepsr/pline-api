@@ -42,8 +42,7 @@ adopted. GitHub OIDC tokens need no such care: they exist only for the duration 
 1. Bump the version with `python3 tests/check_versions.py --set X.Y.Z`. It rewrites
    `mcp-server/Cargo.toml` and `Cargo.lock`, `server.json` (top level, every `packages[].version`, the
    OCI image tag), `npm/package.json` (`version` and all five `optionalDependencies`),
-   `.claude-plugin/plugin.json` (`version` and the `pline-api@<version>` pin),
-   `.claude-plugin/marketplace.json`, and the release links, archive names, and image tags in both
+   `plugin/.claude-plugin/plugin.json` (`version`), `.claude-plugin/marketplace.json`, and the release links, archive names, and image tags in both
    READMEs, then verifies. Without `--set` the same script runs in CI and fails on any mismatch.
 2. Push the tag `v<version>`. [release.yml](.github/workflows/release.yml) then:
    - builds and smoke-tests the five platform binaries (macOS arm64/x64, Linux x64/arm64, Windows x64);
@@ -125,43 +124,42 @@ EOF
 The directory accepts two listing kinds. Desktop extensions (MCPB) are no longer accepted, so a local
 server is distributed as a **plugin bundle**.
 
-### Plugin bundle (ready in this repository)
+### Plugin bundle (the `plugin/` folder)
 
-- [`.claude-plugin/plugin.json`](.claude-plugin/plugin.json) makes the repository root a Claude Code
-  plugin named `pline-ai`: the `skills/pline-api` skill loads everywhere, and the `pline.ai` MCP
-  server runs `npx -y pline-api@<version>` (pinned, as the directory requires) with the API URL and
-  key collected through `userConfig`; the key goes to secure storage, never to settings files.
-- [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) lets anyone install today,
-  without the directory:
+- [`plugin/`](plugin) is the plugin, submitted with **Plugin path** `plugin` so the directory scans
+  only what it ships: [`plugin.json`](plugin/.claude-plugin/plugin.json), a copy of the
+  `pline-api` skill, the icon, a README with the privacy policy section, and the license. Its
+  `pline.ai` MCP server is the **hosted** `https://mcp.pline.ai/mcp` (OAuth), so the plugin works on
+  claude.ai as well as in Claude Code and Cowork, and stores no API key.
+- The skill copy must match `skills/pline-api`: after editing the skill, run
+  `python3 tests/check_plugin.py --sync`. CI runs `tests/check_plugin.py` and fails on any drift.
+- [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) points at `./plugin`, so anyone
+  can install without the directory:
 
   ```sh
   claude plugin marketplace add grepsr/pline-api
   claude plugin install pline-ai@pline-ai
   ```
 
-- Validate before submitting: `claude plugin validate .` (add `--strict` once CI uses Claude Code
-  2.1.281 or newer, which recognises the directory listing fields).
-- Submit at [claude.ai/directory/manage](https://claude.ai/directory/manage) from a Pro, Max, Team, or
-  Enterprise account: **Submit new → Plugin bundle**, enter `grepsr/pline-api` with the plugin at the
-  repository root, select **Validate**, fix anything marked **Blocking**, then **Submit for review**.
-  The first organization to submit a repository owns the listing, so submit from the Grepsr
-  organization account.
-- Expect these review notes, which are holds rather than blocks: a pinned `npx` package is always
-  held for a reviewer because its dependencies resolve at install time, and the root `.mcp.json`
-  reads `PLINE_API_KEY` from the environment for source development (the plugin manifest overrides it
-  with `userConfig`). `privacyPolicyUrl` and `termsOfServiceUrl` point at pline.ai's legal pages; add an `icon` PNG to
-  `plugin.json` before submitting.
+- Validate before submitting: `claude plugin validate plugin` and `claude plugin validate .`
+  (marketplace).
+- Submit at [claude.ai/directory/manage](https://claude.ai/directory/manage) from the Grepsr
+  organization account (the first organization to submit a repository owns the listing):
+  **Submit new → Plugin bundle**, **Repository** `grepsr/pline-api`, **Plugin path** `plugin`, then
+  **Validate**, fix anything **Blocking**, and **Submit for review**.
+- Expected holds, which a reviewer clears: `assets/icon.png` (an image the scanner cannot prove is
+  never executed), a possible name similarity to another listing, and the skill's Python client
+  reading `PLINE_API_KEY` as a fallback when the MCP tools are not connected.
 - After approval, every commit on the tracked branch is re-scanned and published automatically.
-  Raise `version` and the `pline-api@<version>` pin in `plugin.json` with each release.
+  The version script raises `version` in `plugin.json` with each release.
 
-### MCP connector (needs a hosted endpoint)
+### MCP connector (`https://mcp.pline.ai/mcp`)
 
-If the operator hosts the Streamable HTTP mode on a public URL, submit it as an **MCP connector** too:
-**Submit new → MCP connector**, enter the `/mcp` URL. Anthropic probes it anonymously, so it must
-answer `initialize` and `tools/list` or reply `401` with a `WWW-Authenticate` header that leads to an
-OAuth flow with dynamic client registration. The current `/mcp` route accepts an API key header, which
-the directory cannot supply, so an OAuth front door is required first. Pairing the connector with the
-plugin bundle gives one set of tools to people who install both.
+The hosted server (`pline-mcp` in `pline-hades-gitops`, DNS in `pline-hades-infra`) answers `/mcp`
+with `401` and a `WWW-Authenticate` header that leads to Supabase OAuth 2.1 with dynamic client
+registration; every tool declares a `title` and `readOnlyHint` or `destructiveHint`. Submit it with
+**Submit new → MCP connector** and URL `https://mcp.pline.ai/mcp`, then pair it with the plugin
+listing. Reviewers need a pline.ai test account with a workspace, an active API key, and credits.
 
 ## 4. Cursor and VS Code
 
@@ -183,13 +181,12 @@ plugin bundle gives one set of tools to people who install both.
 - **Codex** (CLI, IDE extension, app) reads `~/.codex/config.toml`; the README's
   [Codex MCP section](README.md#codex-1) gives `codex mcp add` and an `env_vars` variant that keeps
   the key out of the file. `npx skills add grepsr/pline-api -a codex` installs the skill.
-- `codex plugin marketplace add grepsr/pline-api` reads `.claude-plugin/marketplace.json`, but Codex
-  passes the plugin's `${user_config.*}` placeholders to the server literally, so the bundled server
-  does not work there. A Codex-native plugin needs a root `plugin.json` and `mcp.json` (Agent Plugins
-  format), and that format has no documented way to forward a user's API key to a stdio server.
+- `codex plugin marketplace add grepsr/pline-api` reads `.claude-plugin/marketplace.json` and installs
+  `plugin/`: Codex sees the hosted server as streamable HTTP at `https://mcp.pline.ai/mcp`; sign in
+  with `codex mcp login pline.ai`.
 - **ChatGPT** and the shared OpenAI plugin directory (platform.openai.com/plugins) accept only a
   remote HTTPS MCP endpoint with OAuth 2.1 or no auth; API-key headers and local stdio servers are
-  not supported. Same prerequisite as the Claude directory's MCP connector below.
+  not supported. `https://mcp.pline.ai/mcp` meets that requirement.
 
 ## 5. Skill distribution (`npx skills add`)
 
@@ -258,13 +255,13 @@ registry automatically when they resume, so the registry publish above covers it
 | npm `pline-api` + platform packages | `npm/` + `publish.yml` npm stage | Yes | First publish with `NPM_TOKEN`, then configure trusted publishers and drop the token |
 | MCP Registry | `server.json` + `publish.yml` registry stage (OIDC) | Yes | Make repo and GHCR package public, then publish a release |
 | GHCR image | `release.yml` image jobs | Yes | Set package visibility to public once |
-| Claude directory, plugin bundle | `.claude-plugin/` | Yes | Submit at claude.ai/directory/manage |
-| Claude directory, MCP connector | Hosted `/mcp` with OAuth | No | Needs a hosted endpoint and OAuth |
+| Claude directory, plugin bundle | `plugin/` (hosted MCP + skill) | Yes | Submit with Plugin path `plugin` |
+| Claude directory, MCP connector | `https://mcp.pline.ai/mcp` with OAuth | Yes | Submit after `mcp.pline.ai` DNS and route are live |
 | Cursor / VS Code | Workspace configs + README buttons | Yes | None |
 | Cursor directory listings | cursor.directory / Cursor Marketplace form | No | Submit the forms |
 | VS Code gallery (GitHub MCP Registry) | Curated from the official registry | No | Email partnerships@github.com |
 | Codex | README `codex mcp add` / `config.toml` | Yes | None |
-| ChatGPT, OpenAI plugin directory | Remote HTTPS MCP with OAuth | No | Needs a hosted endpoint and OAuth |
+| ChatGPT, OpenAI plugin directory | `https://mcp.pline.ai/mcp` with OAuth | Endpoint ready | Submit at platform.openai.com/plugins |
 | Skill via `npx skills add` | `skills/pline-api/` + marketplace.json | Yes | Make the repo public |
 | Glama | `glama.json` + auto-index | Yes | Claim the listing after going public |
 | awesome-mcp-servers | PR | Entry drafted above | List on Glama, then open the PR |
