@@ -9,13 +9,13 @@
     "source": "github",
     "subfolder": "mcp-server"
   },
-  "version": "0.3.5",
+  "version": "0.3.6",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "pline-api",
-      "version": "0.3.5",
+      "version": "0.3.6",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"
@@ -39,7 +39,7 @@
     },
     {
       "registryType": "oci",
-      "identifier": "ghcr.io/grepsr/pline-mcp:0.3.5",
+      "identifier": "ghcr.io/grepsr/pline-mcp:0.3.6",
       "runtimeHint": "docker",
       "transport": {
         "type": "stdio"
