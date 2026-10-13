@@ -38,6 +38,50 @@ fn is_jwt(token: &str) -> bool {
         (Some(a), Some(b), Some(c), None) if !a.is_empty() && !b.is_empty() && !c.is_empty())
 }
 
+/// Decodes unpadded or padded base64url (RFC 4648 section 5), as used in JWT segments.
+fn decode_base64url(input: &str) -> Option<Vec<u8>> {
+    let mut bits: u32 = 0;
+    let mut count = 0u8;
+    let mut out = Vec::with_capacity(input.len() * 3 / 4);
+    for byte in input.bytes().filter(|b| *b != b'=') {
+        let value = match byte {
+            b'A'..=b'Z' => byte - b'A',
+            b'a'..=b'z' => byte - b'a' + 26,
+            b'0'..=b'9' => byte - b'0' + 52,
+            b'-' | b'+' => 62,
+            b'_' | b'/' => 63,
+            _ => return None,
+        };
+        bits = (bits << 6) | u32::from(value);
+        count += 6;
+        if count >= 8 {
+            count -= 8;
+            out.push((bits >> count) as u8);
+        }
+    }
+    Some(out)
+}
+
+/// The non-secret claims that explain why a token was refused (issuer, audience, client,
+/// expiry), decoded without verifying the signature. Never logs the token itself.
+fn token_claims_summary(token: &str) -> serde_json::Value {
+    let claims = token
+        .split('.')
+        .nth(1)
+        .and_then(decode_base64url)
+        .and_then(|bytes| serde_json::from_slice::<serde_json::Value>(&bytes).ok());
+    match claims {
+        Some(claims) => json!({
+            "iss": claims.get("iss"),
+            "aud": claims.get("aud"),
+            "client_id": claims.get("client_id"),
+            "exp": claims.get("exp"),
+            "has_sub": claims.get("sub").is_some(),
+        }),
+        None => json!("undecodable"),
+    }
+}
+
 async fn resolve_oauth_key(token: &str) -> Result<String, (StatusCode, String)> {
     let base = std::env::var("PLINE_PLATFORM_BASE_URL").map_err(|_| {
         (
@@ -59,14 +103,25 @@ async fn resolve_oauth_key(token: &str) -> Result<String, (StatusCode, String)> 
         .bearer_auth(token)
         .send()
         .await
-        .map_err(|_| {
+        .map_err(|error| {
+            tracing::warn!(
+                %error,
+                claims = %token_claims_summary(token),
+                "OAuth token rejected: credential service unreachable"
+            );
             (
                 StatusCode::BAD_GATEWAY,
                 "Could not resolve the Pline API key".into(),
             )
         })?;
     let status = response.status();
-    let body: serde_json::Value = response.json().await.map_err(|_| {
+    let body: serde_json::Value = response.json().await.map_err(|error| {
+        tracing::warn!(
+            credential_status = status.as_u16(),
+            %error,
+            claims = %token_claims_summary(token),
+            "OAuth token rejected: credential service returned an invalid response"
+        );
         (
             StatusCode::BAD_GATEWAY,
             "Pline credential service returned an invalid response".into(),
@@ -82,16 +137,28 @@ async fn resolve_oauth_key(token: &str) -> Result<String, (StatusCode, String)> 
             .get("message")
             .and_then(serde_json::Value::as_str)
             .unwrap_or("Pline account authorization failed");
+        tracing::warn!(
+            credential_status = status.as_u16(),
+            detail,
+            claims = %token_claims_summary(token),
+            "OAuth token rejected by the credential service"
+        );
         return Err((code, detail.to_string()));
     }
     body.get("apiKey")
         .and_then(serde_json::Value::as_str)
         .filter(|key| !key.is_empty())
         .map(ToString::to_string)
-        .ok_or((
-            StatusCode::BAD_GATEWAY,
-            "Pline credential service returned no API key".into(),
-        ))
+        .ok_or_else(|| {
+            tracing::warn!(
+                claims = %token_claims_summary(token),
+                "OAuth token rejected: credential service returned no API key"
+            );
+            (
+                StatusCode::BAD_GATEWAY,
+                "Pline credential service returned no API key".into(),
+            )
+        })
 }
 
 fn header_key(request: &Request) -> Option<String> {
@@ -279,4 +346,30 @@ pub async fn serve(mut server: PlineServer, addr: &str) -> anyhow::Result<()> {
         })
         .await?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn decodes_base64url_with_and_without_padding() {
+        assert_eq!(decode_base64url("aGk").unwrap(), b"hi");
+        assert_eq!(decode_base64url("aGk=").unwrap(), b"hi");
+        assert_eq!(decode_base64url("-_8").unwrap(), [0xfb, 0xff]);
+        assert!(decode_base64url("not base64!").is_none());
+    }
+
+    #[test]
+    fn summarises_claims_without_the_token() {
+        // {"iss":"https://x.supabase.co/auth/v1","aud":"authenticated","client_id":"c1","sub":"u1","exp":1}
+        let payload = "eyJpc3MiOiJodHRwczovL3guc3VwYWJhc2UuY28vYXV0aC92MSIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJjbGllbnRfaWQiOiJjMSIsInN1YiI6InUxIiwiZXhwIjoxfQ";
+        let token = format!("header.{payload}.signature");
+        let summary = token_claims_summary(&token);
+        assert_eq!(summary["aud"], "authenticated");
+        assert_eq!(summary["client_id"], "c1");
+        assert_eq!(summary["has_sub"], true);
+        assert!(!summary.to_string().contains("signature"));
+        assert_eq!(token_claims_summary("a.%%%.c"), json!("undecodable"));
+    }
 }
