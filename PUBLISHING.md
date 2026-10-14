@@ -13,7 +13,7 @@ hand, which credentials each step needs, and the prerequisites that gate everyth
 | Open-source license | The Claude directory blocks a plugin without a `LICENSE` file or `license` in `plugin.json`; npm warns without one; awesome-list maintainers and crates.io require one. | **Done.** MIT, in `LICENSE`, `mcp-server/Cargo.toml`, `npm/package.json`, `.claude-plugin/plugin.json`, and the README. |
 | Public GHCR package | The registry validates the OCI package anonymously. | Verify `pline-mcp` is public before publishing the MCP Registry entry. |
 | npm package names | Launcher: `pline-api`; platform packages are scoped as `@pline/api-<os>-<cpu>` because npm's spam detection rejects new unscoped `*-win32-x64` names. | The `pline` npm org exists; `NPM_TOKEN` must have publish rights on it for the first scoped publish. |
-| A new version tag | Tags are immutable release inputs; `v0.3.5` is the latest published release. | Use the next version, `0.3.6`, after the version bump reaches `main`. |
+| A new version tag | Tags are immutable release inputs; `v0.3.6` is the latest published release. | Use the next version, `0.3.7`, after the version bump reaches `main`. |
 
 ## Credentials and secrets
 

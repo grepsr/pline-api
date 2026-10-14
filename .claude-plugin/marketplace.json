@@ -12,7 +12,7 @@
       "name": "pline-ai",
       "source": "./plugin",
       "description": "Scrape, crawl, batch-scrape, map, and search the web with pline.ai: the hosted pline.ai MCP server plus an agent skill.",
-      "version": "0.3.6",
+      "version": "0.3.7",
       "category": "productivity",
       "tags": [
         "scraping",
