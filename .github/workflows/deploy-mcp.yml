@@ -61,8 +61,8 @@ jobs:
         uses: actions/create-github-app-token@v3
         with:
           # Credentials for the argocd-pusher-grepsr GitHub App.
-          app-id: ${{ vars.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          app-id: ${{ vars.APP_ID_GITOPS }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY_GITOPS }}
           owner: grepsr
           repositories: pline-hades-gitops
           permission-contents: write
