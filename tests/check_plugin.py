@@ -22,7 +22,10 @@ PLUGIN_SKILL = PLUGIN / 'skills/pline-api'
 HOSTED_MCP_URL = 'https://mcp.pline.ai/mcp'
 PRIVACY_POLICY_URL = 'https://www.pline.ai/privacy-policy'
 # What the directory's credential scan treats as reading a key and sending it off the machine.
-FORBIDDEN = re.compile(r'PLINE_API_KEY|PLINE_BASE_URL|apix\.pline\.ai|x-api-key|os\.environ|process\.env')
+FORBIDDEN = re.compile(
+    r'PLINE_API_KEY|PLINE_BASE_URL|apix\.pline\.ai|x-api-key|os\.environ|process\.env|api[ _-]?key',
+    re.IGNORECASE,
+)
 EXECUTABLE_SUFFIXES = {'.py', '.sh', '.js', '.mjs', '.cjs', '.ts', '.rb', '.ps1'}
 
 
@@ -58,8 +61,9 @@ def check():
         rel = path.relative_to(ROOT)
         if path.suffix in EXECUTABLE_SUFFIXES:
             problems.append(f'{rel}: the plugin must not bundle scripts; it uses the hosted MCP server')
+        # README included: the scanner reads prose too ("API key" next to the API host was held).
         hit = FORBIDDEN.search(path.read_text(encoding='utf-8', errors='replace'))
-        if hit and path.name != 'README.md':
+        if hit:
             problems.append(f'{rel}: mentions {hit.group(0)!r}; the plugin must not read a local credential')
 
     manifest = json.loads((PLUGIN / '.claude-plugin/plugin.json').read_text(encoding='utf-8'))
