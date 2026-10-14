@@ -1,18 +1,18 @@
 """Check the Claude directory plugin in plugin/ against the rest of the repository.
 
     python3 tests/check_plugin.py          # verify, exit 1 on any problem
-    python3 tests/check_plugin.py --sync   # copy skills/pline-api into the plugin, then verify
 
-The plugin is submitted from its own folder so the directory scans only what the plugin ships.
-It carries a copy of the agent skill, which must stay identical to skills/pline-api (the copy
-`npx skills add grepsr/pline-api` installs).
+The plugin is submitted from its own folder so the directory scans only what the plugin ships. Its
+MCP server is the hosted https://mcp.pline.ai/mcp, where the user signs in with OAuth, so its copy
+of the pline-api skill is MCP-only: it must not read a credential from the user's machine (no
+PLINE_API_KEY, no direct API host, no bundled scripts). The directory holds any plugin that pairs a
+local credential read with a remote destination. The standalone skill in skills/pline-api, which
+`npx skills add grepsr/pline-api` installs, keeps its Python client and API reference.
 """
 
-import argparse
-import filecmp
 import json
 from pathlib import Path
-import shutil
+import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,34 +20,56 @@ PLUGIN = ROOT / 'plugin'
 SKILL = ROOT / 'skills/pline-api'
 PLUGIN_SKILL = PLUGIN / 'skills/pline-api'
 HOSTED_MCP_URL = 'https://mcp.pline.ai/mcp'
-IGNORED = {'__pycache__', '.DS_Store'}
+PRIVACY_POLICY_URL = 'https://www.pline.ai/privacy-policy'
+# What the directory's credential scan treats as reading a key and sending it off the machine.
+FORBIDDEN = re.compile(r'PLINE_API_KEY|PLINE_BASE_URL|apix\.pline\.ai|x-api-key|os\.environ|process\.env')
+EXECUTABLE_SUFFIXES = {'.py', '.sh', '.js', '.mjs', '.cjs', '.ts', '.rb', '.ps1'}
 
 
-def files(root):
-    return sorted(p.relative_to(root) for p in root.rglob('*')
-                  if p.is_file() and not IGNORED.intersection(p.parts))
-
-
-def sync():
-    if PLUGIN_SKILL.exists():
-        shutil.rmtree(PLUGIN_SKILL)
-    shutil.copytree(SKILL, PLUGIN_SKILL, ignore=shutil.ignore_patterns(*IGNORED))
+def frontmatter(path):
+    text = path.read_text(encoding='utf-8')
+    match = re.match(r'^---\n(.*?)\n---\n', text, re.S)
+    if not match:
+        return {}
+    fields = {}
+    for line in match.group(1).splitlines():
+        key, _, value = line.partition(':')
+        fields[key.strip()] = value.strip()
+    return fields
 
 
 def check():
     problems = []
-    source, copy = files(SKILL), files(PLUGIN_SKILL)
-    if source != copy:
-        problems.append(f'plugin skill files differ: only in skills/: {sorted(set(map(str, source)) - set(map(str, copy)))}, '
-                        f'only in plugin/: {sorted(set(map(str, copy)) - set(map(str, source)))}')
-    for rel in set(source) & set(copy):
-        if not filecmp.cmp(SKILL / rel, PLUGIN_SKILL / rel, shallow=False):
+
+    if not (PLUGIN_SKILL / 'SKILL.md').is_file():
+        problems.append('plugin/skills/pline-api/SKILL.md is missing')
+    else:
+        ours, theirs = frontmatter(PLUGIN_SKILL / 'SKILL.md'), frontmatter(SKILL / 'SKILL.md')
+        for key in ('name', 'description'):
+            if ours.get(key) != theirs.get(key):
+                problems.append(f'plugin skill {key} differs from skills/pline-api: {ours.get(key)!r} != {theirs.get(key)!r}')
+    for rel in ('agents/openai.yaml',):
+        if (PLUGIN_SKILL / rel).read_bytes() != (SKILL / rel).read_bytes():
             problems.append(f'plugin/skills/pline-api/{rel} differs from skills/pline-api/{rel}')
+
+    for path in sorted(PLUGIN.rglob('*')):
+        if not path.is_file() or path.suffix in {'.png', '.jpg', '.jpeg', '.gif', '.webp'}:
+            continue
+        rel = path.relative_to(ROOT)
+        if path.suffix in EXECUTABLE_SUFFIXES:
+            problems.append(f'{rel}: the plugin must not bundle scripts; it uses the hosted MCP server')
+        hit = FORBIDDEN.search(path.read_text(encoding='utf-8', errors='replace'))
+        if hit and path.name != 'README.md':
+            problems.append(f'{rel}: mentions {hit.group(0)!r}; the plugin must not read a local credential')
 
     manifest = json.loads((PLUGIN / '.claude-plugin/plugin.json').read_text(encoding='utf-8'))
     servers = manifest.get('mcpServers', {})
-    if [s.get('url') for s in servers.values()] != [HOSTED_MCP_URL] or any(s.get('type') != 'http' for s in servers.values()):
-        problems.append(f'plugin.json must declare exactly one http MCP server at {HOSTED_MCP_URL}: {servers}')
+    if (len(servers) != 1 or any(s != {'type': 'http', 'url': HOSTED_MCP_URL} for s in servers.values())):
+        problems.append(f'plugin.json must declare exactly one http MCP server at {HOSTED_MCP_URL} and nothing else: {servers}')
+    if manifest.get('privacyPolicyUrl') != PRIVACY_POLICY_URL:
+        problems.append(f'plugin.json privacyPolicyUrl must be {PRIVACY_POLICY_URL}')
+    if 'userConfig' in manifest:
+        problems.append('plugin.json must not ask for credentials through userConfig; the server uses OAuth')
     icon = manifest.get('icon')
     if not icon or not (PLUGIN / icon).is_file():
         problems.append(f'plugin.json icon {icon!r} does not exist inside plugin/')
@@ -61,21 +83,13 @@ def check():
         problems.append(f'.claude-plugin/marketplace.json must list the plugin at ./plugin, found {sources}')
 
     if problems:
-        print('Plugin check failed (run `python3 tests/check_plugin.py --sync` after editing the skill):', file=sys.stderr)
+        print('Plugin check failed:', file=sys.stderr)
         for problem in problems:
             print(f'  - {problem}', file=sys.stderr)
         return 1
-    print(f'Plugin OK: {len(copy)} skill files in sync, hosted MCP server {HOSTED_MCP_URL}')
+    print(f'Plugin OK: MCP-only skill, hosted MCP server {HOSTED_MCP_URL}, no local credential reads')
     return 0
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--sync', action='store_true', help='copy skills/pline-api into plugin/ first')
-    if parser.parse_args().sync:
-        sync()
-    return check()
-
-
 if __name__ == '__main__':
-    sys.exit(main())
+    sys.exit(check())
