@@ -20,7 +20,12 @@ PLUGIN = ROOT / 'plugin'
 SKILL = ROOT / 'skills/pline-api'
 PLUGIN_SKILL = PLUGIN / 'skills/pline-api'
 HOSTED_MCP_URL = 'https://mcp.pline.ai/mcp'
-PRIVACY_POLICY_URL = 'https://www.pline.ai/privacy-policy'
+LISTING_LINKS = {
+    'documentationUrl': 'https://github.com/grepsr/pline-api#readme',
+    'supportUrl': 'https://github.com/grepsr/pline-api/issues',
+    'privacyPolicyUrl': 'https://www.pline.ai/privacy-policy',
+    'termsOfServiceUrl': 'https://www.pline.ai/terms-of-service',
+}
 # What the directory's credential scan treats as reading a key and sending it off the machine.
 FORBIDDEN = re.compile(
     r'PLINE_API_KEY|PLINE_BASE_URL|apix\.pline\.ai|x-api-key|os\.environ|process\.env|api[ _-]?key',
@@ -70,8 +75,11 @@ def check():
     servers = manifest.get('mcpServers', {})
     if (len(servers) != 1 or any(s != {'type': 'http', 'url': HOSTED_MCP_URL} for s in servers.values())):
         problems.append(f'plugin.json must declare exactly one http MCP server at {HOSTED_MCP_URL} and nothing else: {servers}')
-    if manifest.get('privacyPolicyUrl') != PRIVACY_POLICY_URL:
-        problems.append(f'plugin.json privacyPolicyUrl must be {PRIVACY_POLICY_URL}')
+    # Set explicitly: without them the directory guesses from the README (it once took
+    # example.com from an example prompt as the documentation link).
+    for key, wanted in LISTING_LINKS.items():
+        if manifest.get(key) != wanted:
+            problems.append(f'plugin.json {key} must be {wanted}, found {manifest.get(key)!r}')
     if 'userConfig' in manifest:
         problems.append('plugin.json must not ask for credentials through userConfig; the server uses OAuth')
     icon = manifest.get('icon')
