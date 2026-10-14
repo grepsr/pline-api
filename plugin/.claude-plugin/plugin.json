@@ -12,6 +12,7 @@
   "homepage": "https://pline.ai",
   "repository": "https://github.com/grepsr/pline-api",
   "license": "MIT",
+  "privacyPolicyUrl": "https://www.pline.ai/privacy-policy",
   "keywords": [
     "scraping",
     "crawling",
@@ -23,8 +24,7 @@
   "mcpServers": {
     "pline.ai": {
       "type": "http",
-      "url": "https://mcp.pline.ai/mcp",
-      "args": []
+      "url": "https://mcp.pline.ai/mcp"
     }
   }
 }

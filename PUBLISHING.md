@@ -127,12 +127,18 @@ server is distributed as a **plugin bundle**.
 ### Plugin bundle (the `plugin/` folder)
 
 - [`plugin/`](plugin) is the plugin, submitted with **Plugin path** `plugin` so the directory scans
-  only what it ships: [`plugin.json`](plugin/.claude-plugin/plugin.json), a copy of the
-  `pline-api` skill, the icon, a README with the privacy policy section, and the license. Its
+  only what it ships: [`plugin.json`](plugin/.claude-plugin/plugin.json) (with `privacyPolicyUrl`),
+  an MCP-only version of the `pline-api` skill, the icon, a README with the privacy policy section,
+  and the license. Its
   `pline.ai` MCP server is the **hosted** `https://mcp.pline.ai/mcp` (OAuth), so the plugin works on
   claude.ai as well as in Claude Code and Cowork, and stores no API key.
-- The skill copy must match `skills/pline-api`: after editing the skill, run
-  `python3 tests/check_plugin.py --sync`. CI runs `tests/check_plugin.py` and fails on any drift.
+- The plugin's skill is MCP-only on purpose: no Python client, no `PLINE_API_KEY`, and no direct API
+  host. The directory holds any plugin that reads a local credential and also sends data off the
+  machine (`MCP_FORWARDS_CREDENTIAL_ENV`); with OAuth through the hosted server none is needed. The
+  standalone `skills/pline-api` (for `npx skills add`) keeps the Python client. When you change the
+  standalone skill, update `plugin/skills/pline-api/SKILL.md` to match in MCP terms;
+  `tests/check_plugin.py` (CI) enforces the same name, description, and `agents/openai.yaml`, and
+  fails if the plugin gains a script or a credential reference.
 - [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) points at `./plugin`, so anyone
   can install without the directory:
 
@@ -148,8 +154,8 @@ server is distributed as a **plugin bundle**.
   **Submit new → Plugin bundle**, **Repository** `grepsr/pline-api`, **Plugin path** `plugin`, then
   **Validate**, fix anything **Blocking**, and **Submit for review**.
 - Expected holds, which a reviewer clears: `assets/icon.png` (an image the scanner cannot prove is
-  never executed), a possible name similarity to another listing, and the skill's Python client
-  reading `PLINE_API_KEY` as a fallback when the MCP tools are not connected.
+  never executed) and `NAME_CONFUSABLE` (`pline-ai` is within two characters of the unrelated
+  "Plane" listing).
 - After approval, every commit on the tracked branch is re-scanned and published automatically.
   The version script raises `version` in `plugin.json` with each release.
 

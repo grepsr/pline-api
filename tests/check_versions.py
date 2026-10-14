@@ -81,7 +81,8 @@ def set_version(new):
     plugin = load_json(PLUGIN_MANIFEST)
     plugin['version'] = new
     for mcp in plugin.get('mcpServers', {}).values():
-        mcp['args'] = [re.sub(rf'^{re.escape(NPM)}@.*$', f'{NPM}@{new}', arg) for arg in mcp.get('args', [])]
+        if 'args' in mcp:  # hosted (http) servers have none; do not add an empty list
+            mcp['args'] = [re.sub(rf'^{re.escape(NPM)}@.*$', f'{NPM}@{new}', arg) for arg in mcp['args']]
     dump_json(PLUGIN_MANIFEST, plugin)
 
     marketplace = load_json('.claude-plugin/marketplace.json')
