@@ -618,6 +618,8 @@ impl PlineServer {
     /// final_url, session_id, request_id, effective_geolocation, site_tier. A 200 with empty data is a
     /// soft failure: retry with js_render=true if it was unset, or drop a proxy_strategy pin. The
     /// session returned is remembered per host and reused on the next scrape of that host.
+    ///
+    /// API docs: https://apidocs.pline.ai/guides/endpoints/scrape
     #[tool(
         name = "scrape",
         annotations(
@@ -641,6 +643,8 @@ impl PlineServer {
     /// Returns 202 metadata with the job id. Poll with batch_scrape_status. Completed jobs expose one
     /// JSONL artifact per output format, one line per URL: index, url, success, status, finalUrl,
     /// output, error. Cheaper and more predictable than a crawl when the URLs are already known.
+    ///
+    /// API docs: https://apidocs.pline.ai/guides/endpoints/batch-scrape
     #[tool(
         name = "batch_scrape_start",
         annotations(
@@ -712,6 +716,8 @@ impl PlineServer {
     /// Returns 202 metadata with the job id. Poll with crawl_status. Completed jobs expose one ZIP per
     /// format with a manifest.json mapping files to source URLs. Scope it first: an unscoped crawl of
     /// a large site burns credits fast, and map_site shows what a crawl would hit for one cheap call.
+    ///
+    /// API docs: https://apidocs.pline.ai/guides/endpoints/crawl
     #[tool(
         name = "crawl_start",
         annotations(
@@ -779,6 +785,8 @@ impl PlineServer {
     /// description when known.
     ///
     /// Cheap. Use it to size up a site before crawl_start, or when only the URL list is needed.
+    ///
+    /// API docs: https://apidocs.pline.ai/guides/endpoints/map
     #[tool(
         name = "map_site",
         annotations(
@@ -800,6 +808,8 @@ impl PlineServer {
     ///
     /// Organic results carry position, title, link, snippet, domain, page, and
     /// html_body/clean_html/links when output was requested.
+    ///
+    /// API docs: https://apidocs.pline.ai/guides/endpoints/serp
     #[tool(
         name = "search",
         annotations(
