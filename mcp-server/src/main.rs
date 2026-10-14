@@ -15,7 +15,7 @@ use rmcp::model::{
 };
 use rmcp::service::RequestContext;
 use rmcp::{tool, tool_handler, tool_router, RoleServer, ServerHandler, ServiceExt};
-use schemars::JsonSchema;
+use schemars::{json_schema, JsonSchema, Schema, SchemaGenerator};
 use serde::Deserialize;
 use serde_json::{json, Map, Value};
 
@@ -92,6 +92,9 @@ impl HttpMethod {
 
 #[derive(Debug, Clone, Copy, Deserialize, JsonSchema, Default)]
 #[serde(rename_all = "lowercase")]
+// Inlined so each property carries its own "type"; MCP clients and the Claude directory
+// flag a property that is only a $ref.
+#[schemars(inline)]
 enum SitemapMode {
     Skip,
     #[default]
@@ -111,6 +114,9 @@ impl SitemapMode {
 
 #[derive(Debug, Clone, Copy, Deserialize, JsonSchema, Default)]
 #[serde(rename_all = "lowercase")]
+// Inlined so each property carries its own "type"; MCP clients and the Claude directory
+// flag a property that is only a $ref.
+#[schemars(inline)]
 enum SerpMode {
     Fast,
     #[default]
@@ -128,6 +134,9 @@ impl SerpMode {
 
 #[derive(Debug, Clone, Copy, Deserialize, JsonSchema, Default)]
 #[serde(rename_all = "lowercase")]
+// Inlined so each property carries its own "type"; MCP clients and the Claude directory
+// flag a property that is only a $ref.
+#[schemars(inline)]
 enum SerpDevice {
     #[default]
     Desktop,
@@ -238,6 +247,7 @@ struct FetchOptions {
     /// {"name":"string","price":"number"}. A list-shaped schema extracts a listing page and returns
     /// an array.
     #[serde(default)]
+    #[schemars(schema_with = "json_shape_schema")]
     schema: Option<Value>,
     /// Request timeout in milliseconds (1000-60000).
     #[serde(default)]
@@ -253,7 +263,18 @@ struct FetchOptions {
     method: Option<HttpMethod>,
     /// Request body (JSON object or string) for POST/PUT/DELETE; not allowed with GET or a browser.
     #[serde(default)]
+    #[schemars(schema_with = "request_body_schema")]
     body: Option<Value>,
+}
+
+/// `schema` for JSON output: an object shape, or a one-element array of one for listing pages.
+fn json_shape_schema(_: &mut SchemaGenerator) -> Schema {
+    json_schema!({ "type": ["object", "array", "null"], "default": null })
+}
+
+/// `body` for POST/PUT/DELETE targets: a JSON object or a raw string.
+fn request_body_schema(_: &mut SchemaGenerator) -> Schema {
+    json_schema!({ "type": ["object", "string", "null"], "default": null })
 }
 
 impl FetchOptions {

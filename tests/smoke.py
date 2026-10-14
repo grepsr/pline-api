@@ -171,6 +171,11 @@ def check_mcp(workdir, env):
             assert 'readOnlyHint' in annotations or 'destructiveHint' in annotations, tool['name']
             if tool['name'].endswith('_cancel'):
                 assert annotations.get('destructiveHint') is True, tool['name']
+            # The connector directory flags parameters whose schema has no type (a bare $ref or
+            # free-form JSON), so every property must declare one, directly or in anyOf/oneOf.
+            for name, prop in tool['inputSchema'].get('properties', {}).items():
+                branches = prop.get('anyOf', []) + prop.get('oneOf', [])
+                assert 'type' in prop or any('type' in b for b in branches), (tool['name'], name)
         assert {r['uri'] for r in rpc('resources/list', {}, 3)['resources']} == {'pline://guide', 'pline://reference'}
         for index, uri in enumerate(('pline://guide', 'pline://reference'), 4):
             assert 'pline.ai' in rpc('resources/read', {'uri': uri}, index)['contents'][0]['text']
