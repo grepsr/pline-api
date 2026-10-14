@@ -264,6 +264,28 @@ async fn oauth_resource_metadata() -> Response {
     .into_response()
 }
 
+/// The pline.ai icon (512x512 PNG), served without a key so MCP clients and the Claude directory
+/// can show it for this server's URL.
+pub(crate) const ICON_PNG: &[u8] = include_bytes!("assets/icon.png");
+
+async fn icon() -> impl IntoResponse {
+    (
+        [
+            (header::CONTENT_TYPE, "image/png"),
+            (header::CACHE_CONTROL, "public, max-age=86400"),
+        ],
+        ICON_PNG,
+    )
+}
+
+/// A minimal public page at `/` so favicon lookups that read the page find the icon.
+async fn landing() -> impl IntoResponse {
+    (
+        [(header::CONTENT_TYPE, "text/html; charset=utf-8")],
+        r#"<!doctype html><html><head><meta charset="utf-8"><title>pline.ai MCP server</title><link rel="icon" type="image/png" href="/favicon.png"><link rel="apple-touch-icon" href="/favicon.png"></head><body><p>pline.ai MCP server. Connect an MCP client to <code>/mcp</code>. Docs: <a href="https://github.com/grepsr/pline-api#readme">github.com/grepsr/pline-api</a></p></body></html>"#,
+    )
+}
+
 async fn health() -> impl IntoResponse {
     Json(json!({"status": "ok", "service": "pline.ai"}))
 }
@@ -336,7 +358,10 @@ pub async fn serve(mut server: PlineServer, addr: &str) -> anyhow::Result<()> {
             "/.well-known/oauth-protected-resource",
             get(oauth_resource_metadata),
         )
-        .route("/health", get(health));
+        .route("/health", get(health))
+        .route("/favicon.ico", get(icon))
+        .route("/favicon.png", get(icon))
+        .route("/", get(landing));
     let listener = tokio::net::TcpListener::bind(addr).await?;
     tracing::info!(%addr, "pline.ai MCP listening (Streamable HTTP at /mcp and /<api-key>/mcp)");
     axum::serve(listener, app)

@@ -159,6 +159,8 @@ def check_mcp(workdir, env):
         info = rpc('initialize', {'protocolVersion': '2025-03-26', 'capabilities': {},
                                  'clientInfo': {'name': 'smoke', 'version': '1'}}, 1)
         assert info['serverInfo']['name'] == 'pline.ai'
+        assert info['serverInfo']['icons'][0]['src'].endswith('/favicon.png'), info['serverInfo']
+        assert info['serverInfo']['websiteUrl'] == 'https://pline.ai', info['serverInfo']
         rpc('notifications/initialized', {})
         tools = rpc('tools/list', {}, 2)['tools']
         assert len(tools) == 10
@@ -302,6 +304,18 @@ def check_http(workdir, env):
         # OAuth metadata must be reachable without a key, at the hinted and the root well-known URL.
         for path in ('/.well-known/oauth-protected-resource/mcp', '/.well-known/oauth-protected-resource'):
             assert request('GET', key=None, path=path)[0] == 404, path  # not configured here, but not 401
+        # The icon and the landing page that points at it are public, so the Claude directory and
+        # MCP clients can show the server's favicon.
+        icon_bytes = (ROOT / 'mcp-server/src/assets/icon.png').read_bytes()
+        for path in ('/favicon.ico', '/favicon.png'):
+            conn = http.client.HTTPConnection('127.0.0.1', port, timeout=10)
+            conn.request('GET', path)
+            response = conn.getresponse()
+            assert (response.status, response.getheader('Content-Type')) == (200, 'image/png'), path
+            assert response.read() == icon_bytes, path
+            conn.close()
+        status, headers, page = request('GET', key=None, path='/')
+        assert status == 200 and 'rel="icon"' in page, (status, page)
         assert len(rpc('tools/list', {}, key=None,
                        headers={'Authorization': 'Bearer smoke-dummy-key'})['tools']) == 10
         assert len(rpc('resources/list', {})['resources']) == 2

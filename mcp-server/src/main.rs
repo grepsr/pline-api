@@ -9,7 +9,7 @@ use std::sync::Arc;
 
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::{
-    CallToolResult, ContentBlock, ErrorData, Extensions, Implementation, ListResourcesResult,
+    CallToolResult, ContentBlock, ErrorData, Extensions, Icon, Implementation, ListResourcesResult,
     PaginatedRequestParams, ReadResourceRequestParams, ReadResourceResponse, ReadResourceResult,
     Resource, ResourceContents, ServerCapabilities, ServerConfig,
 };
@@ -1282,6 +1282,19 @@ impl ServerHandler for PlineServer {
         implementation.description = Some(
             "Scrape, crawl, batch-scrape, map, and search the web through pline.ai.".to_string(),
         );
+        implementation.website_url = Some("https://pline.ai".to_string());
+        // Served by the hosted server (`/favicon.png`); a local stdio server points at the same
+        // public copy rather than embedding the image in every initialize response.
+        let public_url = std::env::var("PLINE_MCP_PUBLIC_URL")
+            .ok()
+            .filter(|url| !url.trim().is_empty())
+            .unwrap_or_else(|| "https://mcp.pline.ai".to_string());
+        implementation.icons = Some(vec![Icon::new(format!(
+            "{}/favicon.png",
+            public_url.trim_end_matches('/')
+        ))
+        .with_mime_type("image/png")
+        .with_sizes(vec!["512x512".to_string()])]);
         ServerConfig::new(
             ServerCapabilities::builder()
                 .enable_tools()
