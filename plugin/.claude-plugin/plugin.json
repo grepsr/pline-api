@@ -12,7 +12,10 @@
   "homepage": "https://pline.ai",
   "repository": "https://github.com/grepsr/pline-api",
   "license": "MIT",
+  "documentationUrl": "https://github.com/grepsr/pline-api#readme",
+  "supportUrl": "https://github.com/grepsr/pline-api/issues",
   "privacyPolicyUrl": "https://www.pline.ai/privacy-policy",
+  "termsOfServiceUrl": "https://www.pline.ai/terms-of-service",
   "keywords": [
     "scraping",
     "crawling",

@@ -17,11 +17,11 @@ The plugin bundles two things:
    /plugin install pline-ai --marketplace grepsr/pline-api
    ```
 2. When Claude first connects to the server, sign in with your pline.ai account.
-3. On the consent page, choose the workspace and API key the plugin should use, and approve.
+3. On the consent page, choose the pline.ai workspace the plugin should use, and approve.
 
-No API key is pasted into Claude: the server resolves the key you selected for each request, and you
-can change or disconnect it at any time at <https://app.pline.ai/mcp/connections>. Usage counts against
-the selected workspace's pline.ai plan.
+You never paste anything into Claude: sign-in happens on pline.ai, and you can change or disconnect the
+connection at any time at <https://app.pline.ai/mcp/connections>. Usage counts against the selected
+workspace's pline.ai plan.
 
 ## Tools
 
@@ -47,11 +47,11 @@ The server also provides the `pline://guide` and `pline://reference` resources.
 
 pline.ai's [privacy policy](https://www.pline.ai/privacy-policy) applies to all data the plugin sends.
 
-- **What is sent:** the URLs, search queries, and options for each tool call go to the pline.ai API
-  (`https://apix.pline.ai`) through the hosted MCP server, authenticated as the signed-in pline.ai user.
-- **Storage:** the plugin stores nothing on your machine. The hosted server does not persist request
-  data; it looks up your selected API key for each request. pline.ai's handling of job results and
-  account data is described in its privacy policy.
+- **What is sent:** the URLs, search queries, and options for each tool call go to pline.ai through
+  the hosted MCP server (`https://mcp.pline.ai/mcp`), on behalf of the signed-in pline.ai user.
+- **Storage:** the plugin stores nothing on your machine, and the hosted server does not persist
+  request data. pline.ai's handling of job results and account data is described in its privacy
+  policy.
 - **Third parties:** pages you ask to scrape or crawl are fetched from their own websites. Other
   sharing is covered by the privacy policy.
 - **Retention:** as set out in the privacy policy.

@@ -6,8 +6,8 @@ description: Use when fetching web pages, extracting HTML, Markdown, screenshots
 # pline.ai API
 
 Use the pline.ai MCP tools that ship with this plugin. The user signs in to pline.ai when the server
-first connects and chooses the workspace and API key it uses; there is nothing to configure here and
-no key to ask for. If the tools are not connected, ask the user to connect the pline.ai server
+first connects and chooses the workspace it uses; there is nothing to configure here and nothing to
+ask the user for. If the tools are not connected, ask the user to connect the pline.ai server
 (for example with `/mcp` in Claude Code) rather than calling the API another way.
 
 The server documents itself: read the `pline://guide` resource for usage guidance and
