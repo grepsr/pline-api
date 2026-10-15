@@ -68,7 +68,7 @@ jobs:
           permission-contents: write
 
       - name: Check out GitOps repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: grepsr/pline-hades-gitops
           ref: main
