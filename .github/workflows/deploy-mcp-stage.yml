@@ -27,7 +27,7 @@ jobs:
         draft="$(gh release view "$VERSION" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)"
         [ "$draft" = false ]
     - name: Check out source
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         ref: ${{ inputs.version }}
     - name: Validate stage inputs
@@ -76,7 +76,7 @@ jobs:
         repositories: pline-hades-gitops
         permission-contents: write
     - name: Check out GitOps repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         repository: grepsr/pline-hades-gitops
         ref: main
