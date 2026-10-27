@@ -2,9 +2,11 @@
 # nodes. Triggered by tags like n8n-v0.1.0, which `npm run release` in n8n-pline/ creates.
 #
 # One-time setup on npmjs.com (package n8n-nodes-pline → Settings → Trusted publisher →
-# GitHub Actions): owner grepsr, repository pline-api, workflow n8n-node-publish.yml, no
-# environment. The first version must be published once with a token (NPM_TOKEN secret) because a
-# trusted publisher can only be attached to an existing package; delete the token afterwards.
+# GitHub Actions): owner grepsr, repository pline-api, workflow n8n-node-publish.yml, environment
+# n8n-npm-publish. The first version must be published once with a token because a trusted
+# publisher can only be attached to an existing package: store it as NPM_TOKEN on the
+# n8n-npm-publish GitHub environment (separate from the MCP server's npm-publish environment, so
+# the two tokens never collide) and delete it afterwards.
 
 name: Publish n8n node
 
@@ -19,6 +21,9 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    # Holds NPM_TOKEN while it is needed and is the environment name configured on the package's
+    # npm trusted publisher.
+    environment: n8n-npm-publish
     permissions:
       id-token: write
       contents: read
