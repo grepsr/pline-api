@@ -1,0 +1,9 @@
+{
+	"git": {
+		"tagName": "n8n-v${version}",
+		"commitMessage": "Release n8n-nodes-pline ${version}"
+	},
+	"github": {
+		"releaseName": "n8n-nodes-pline ${version}"
+	}
+}

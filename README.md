@@ -7,6 +7,7 @@ API key and call the same hosted scraping API. The scraping backend is not part 
 |---|---|---|
 | [pline-api skill](skills/pline-api/SKILL.md) | Agent instructions, API reference, Python CLI for scrape, batch, crawl, map, and search | Python 3.10+; no pip dependencies |
 | [MCP server](mcp-server/README.md) | Ten tools over local stdio; embedded usage guide and API reference | `npx -y pline-api` (Node.js 18+); also a Docker image, prebuilt binaries, or a Cargo source build |
+| [n8n community node](n8n-pline/README.md) | `n8n-nodes-pline`: Scrape, Batch Scrape, Crawl, Map and Search operations for n8n workflows | n8n 1.x; install from n8n's community nodes panel |
 
 **Fastest setup:** run `npx -y pline-api@latest init` and enter your API key. It configures every
 supported MCP client on your machine and installs the skill; see [Quick install](#quick-install).
