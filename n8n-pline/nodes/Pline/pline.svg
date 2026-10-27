@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1276FF"/>
+      <stop offset="1" stop-color="#1A5FD0"/>
+    </linearGradient>
+    <clipPath id="c">
+      <path d="M205 102H408V305C408 362 362 408 305 408H102V205C102 148 148 102 205 102Z"/>
+    </clipPath>
+  </defs>
+  <path d="M205 102H408V305C408 362 362 408 305 408H102V205C102 148 148 102 205 102Z" fill="url(#g)"/>
+  <path clip-path="url(#c)" d="M118 420C190 390 230 300 262 230C294 160 325 110 400 92L430 92C350 125 320 190 290 265C260 340 225 405 170 420Z" fill="#FFFFFF"/>
+</svg>

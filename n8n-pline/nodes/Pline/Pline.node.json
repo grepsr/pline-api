@@ -1,0 +1,18 @@
+{
+	"node": "n8n-nodes-pline.pline",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Data & Storage", "Development"],
+	"resources": {
+		"credentialDocumentation": [
+			{
+				"url": "https://github.com/grepsr/pline-api/tree/main/n8n-pline#credentials"
+			}
+		],
+		"primaryDocumentation": [
+			{
+				"url": "https://github.com/grepsr/pline-api/tree/main/n8n-pline#readme"
+			}
+		]
+	}
+}

@@ -1,0 +1,46 @@
+# Publishes n8n-nodes-pline to npm with provenance, which n8n requires for verified community
+# nodes. Triggered by tags like n8n-v0.1.0, which `npm run release` in n8n-pline/ creates.
+#
+# One-time setup on npmjs.com (package n8n-nodes-pline → Settings → Trusted publisher →
+# GitHub Actions): owner grepsr, repository pline-api, workflow n8n-node-publish.yml, no
+# environment. The first version must be published once with a token (NPM_TOKEN secret) because a
+# trusted publisher can only be attached to an existing package; delete the token afterwards.
+
+name: Publish n8n node
+
+on:
+  push:
+    tags: ['n8n-v*.*.*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    defaults:
+      run:
+        working-directory: n8n-pline
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 'lts/*'
+          registry-url: https://registry.npmjs.org
+          cache: npm
+          cache-dependency-path: n8n-pline/package-lock.json
+      - run: npm ci
+      - name: Check the tag matches package.json
+        run: |
+          v="$(node -p "require('./package.json').version")"
+          [ "${GITHUB_REF_NAME}" = "n8n-v${v}" ] || { echo "tag ${GITHUB_REF_NAME} != n8n-v${v}"; exit 1; }
+      - name: Lint, build, and publish with provenance
+        run: |
+          [ -n "$NPM_TOKEN" ] && npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN"
+          npm run release
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
