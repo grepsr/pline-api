@@ -62,6 +62,25 @@ async function run(params, replies, options = {}) {
 	});
 	assert.deepEqual(r.items, [{ data: { markdown: '# Hi' } }]);
 
+	// An empty Actions array (e.g. from an expression) is omitted and does not imply a browser.
+	r = await run(
+		{
+			resource: 'scrape',
+			operation: 'scrape',
+			url: 'https://x.io',
+			output: ['html'],
+			options: { actions: '[]', jsRender: 'false', method: 'POST', body: '{"a":1}' },
+		},
+		[{ statusCode: 200, body: { data: {} } }],
+	);
+	assert.deepEqual(r.calls[0].body, {
+		url: 'https://x.io',
+		output: ['html'],
+		js_render: false,
+		method: 'POST',
+		body: { a: 1 },
+	});
+
 	// Local validation fires before any request is sent.
 	for (const [options, output, needle] of [
 		[{}, ['json'], 'Prompt and/or a Schema'],

@@ -57,7 +57,7 @@ function fetchBody(
 	if (o.waitSelector) body.wait_selector = o.waitSelector;
 	if (o.waitMs !== undefined) body.wait_ms = o.waitMs;
 	const actions = parseJson.call(this, o.actions, 'Actions', itemIndex);
-	if (actions !== undefined) body.actions = actions as IDataObject[];
+	if (Array.isArray(actions) && actions.length) body.actions = actions as IDataObject[];
 	if (o.method && o.method !== 'GET') body.method = o.method;
 	const reqBody = parseJson.call(this, o.body, 'Body', itemIndex);
 	if (reqBody !== undefined) body.body = reqBody as IDataObject;
