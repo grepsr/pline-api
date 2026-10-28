@@ -62,7 +62,7 @@ requested format: `html_body`, `clean_html`, `links`, `markdown`, `clean_markdow
 | URL | required |
 | Output Formats | default Markdown. JSON needs a Prompt and/or Schema. Screenshot and Screenshot (Full Page) are exclusive. |
 | JavaScript Rendering | Let Pline Decide (default), Require a Browser, Forbid a Browser |
-| Proxy Strategy | Auto (default), Basic, Enhanced, Premium, in ascending cost |
+| Proxy Strategy | Auto (default), Basic, Premium, in ascending cost |
 | Only Main Content, Geolocation, Tags, Timeout, Wait for Selector, Wait | per-page fetch controls |
 | Actions | JSON array of browser steps (click, type, scroll, wait, ...). Implies a browser and GET. |
 | Prompt, Schema | drive JSON extraction. A list-shaped schema returns an array. |

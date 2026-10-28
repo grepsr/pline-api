@@ -33,7 +33,7 @@ SCRAPE_OUTPUTS = (
     "json",
 )
 CRAWL_OUTPUTS = ("markdown", "html", "clean_html", "links", "screenshot")
-PROXY_STRATEGIES = ("auto", "basic", "enhanced", "premium")
+PROXY_STRATEGIES = ("auto", "basic", "premium")
 DATA_KEY_EXTENSION = {
     "html_body": "html",
     "clean_html": "html",

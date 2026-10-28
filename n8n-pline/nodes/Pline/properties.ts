@@ -86,7 +86,6 @@ const proxyStrategy: INodeProperties = {
 			value: 'basic',
 			description: 'Cheapest tier only; fails rather than escalating',
 		},
-		{ name: 'Enhanced', value: 'enhanced', description: 'A stronger tier from the first attempt' },
 		{
 			name: 'Premium',
 			value: 'premium',

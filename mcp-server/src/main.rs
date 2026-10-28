@@ -37,7 +37,7 @@ Rules of thumb:
 must be discovered, and `map_site` before a crawl to size it.
 - Leave `js_render` unset so the service decides; set true only when content is known to be \
 client-rendered, false for plain HTML/API targets where cheap-and-fast beats escalation.
-- Leave `proxy_strategy` unset (auto). Pin `basic` for open sites to save cost, `enhanced` or `premium` \
+- Leave `proxy_strategy` unset (auto). Pin `basic` for open sites to save cost, `premium` \
 only when a site keeps failing and the caller accepts higher cost.
 - Sessions are the main cost lever: the server remembers the session per host and reuses it. Do not pass \
 `new_session=true` unless a fresh identity is actually wanted.
@@ -55,7 +55,6 @@ speculate about undocumented controls.";
 enum ProxyStrategy {
     Auto,
     Basic,
-    Enhanced,
     Premium,
 }
 
@@ -64,7 +63,6 @@ impl ProxyStrategy {
         match self {
             Self::Auto => "auto",
             Self::Basic => "basic",
-            Self::Enhanced => "enhanced",
             Self::Premium => "premium",
         }
     }
@@ -221,8 +219,8 @@ struct FetchOptions {
     #[serde(default)]
     js_render: Option<bool>,
     /// Access-strength tier in ascending cost. Unset/auto: start cheap and escalate only as far as
-    /// the site requires. basic: cheapest tier only, fails rather than escalating. enhanced /
-    /// premium: start at a stronger, costlier tier.
+    /// the site requires. basic: cheapest tier only, fails rather than escalating.
+    /// premium: start at the strongest, costliest tier.
     #[serde(default)]
     proxy_strategy: Option<ProxyStrategy>,
     /// Strip navigation, footer, and ads from clean_html, links, markdown, and json input.
