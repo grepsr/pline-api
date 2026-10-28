@@ -33,7 +33,7 @@ pub const CRAWL_OUTPUTS: &[&str] = &[
     "screenshot_full_page",
 ];
 pub const SERP_OUTPUTS: &[&str] = &["html", "clean_html", "links"];
-pub const PROXY_STRATEGIES: &[&str] = &["auto", "basic", "enhanced", "premium"];
+pub const PROXY_STRATEGIES: &[&str] = &["auto", "basic", "premium"];
 pub const TERMINAL_JOB_STATUSES: &[&str] = &["completed", "failed", "cancelled"];
 pub const MAX_WAIT_SECS: f64 = 600.0;
 const POLL_INTERVAL: Duration = Duration::from_secs(5);

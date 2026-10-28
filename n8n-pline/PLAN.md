@@ -10,8 +10,6 @@ Where the sources disagree, the node sends only the fields the user sets, so API
 server-side and the UI never states a default the sources disagree on:
 
 - crawl `crawlEntireDomain`: docs say default true, the MCP reference says false.
-- crawl `proxy_strategy`: docs list auto/basic/premium, the MCP reference adds `enhanced`
-  (the API accepts it on scrape, so the node offers all four everywhere).
 - search cost: docs billing page says 2 credits per 10 results, the MCP guide says fast = 1 and
   full = 3 credits. The UI says "costs credits; full mode costs more" without a number.
 
@@ -55,7 +53,7 @@ Required: URL. Options collection (sent only when set, so API defaults apply):
 
 `output` (multi-select: html, clean_html, links, markdown, clean_markdown, screenshot,
 screenshot_full_page, json; default markdown in the UI), `js_render` (three-way: service decides
-/ require browser / forbid browser), `proxy_strategy` (auto, basic, enhanced, premium),
+/ require browser / forbid browser), `proxy_strategy` (auto, basic, premium),
 `only_main_content` (default true), `geolocation` (2-letter), `session_id`, `tag` (comma list),
 `actions` (JSON array), `prompt`, `schema` (JSON), `timeout` (1000-60000 ms), `wait_selector`,
 `wait_ms` (0-60000), `method` (GET/POST/PUT/DELETE), `body` (JSON or string).

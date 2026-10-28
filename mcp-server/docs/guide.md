@@ -29,9 +29,9 @@ before a crawl is a good habit: it shows what a crawl would hit, for one cheap c
   `false` forbids a browser; use it for plain HTML or API-style targets where you want the cheapest
   path and a fast failure instead of escalation. `false` cannot be combined with `actions` or
   screenshot output.
-- `proxy_strategy` is how much access strength to spend: `auto` (default), `basic`, `enhanced`,
+- `proxy_strategy` is how much access strength to spend: `auto` (default), `basic`,
   `premium`. Leave it unset and pline.ai escalates through the tiers only as far as a site
-  requires. Pin `basic` for sites you know are open to keep cost down; pin `enhanced` or `premium`
+  requires. Pin `basic` for sites you know are open to keep cost down; pin `premium`
   when a site keeps failing under `auto` and the user accepts the higher cost.
 - `prompt` / `schema`: with `json` output, extract structured data. One of the two is required. A
   list-shaped schema makes it a listing extraction and returns an array.

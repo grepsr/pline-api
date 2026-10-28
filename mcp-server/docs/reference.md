@@ -32,7 +32,7 @@ Synchronous. Returns `200` with the page, or an error status. Server-side budget
 | `method` | string | `"GET"` | `GET`, `POST`, `PUT`, `DELETE`. Browser-rendered requests are `GET`-only |
 | `body` | object \| string | — | not allowed with `GET`, not allowed with browser rendering |
 | `js_render` | bool \| omitted | omitted | tri-state, see below |
-| `proxy_strategy` | string | `"auto"` | `auto`, `basic`, `enhanced`, `premium`, see below |
+| `proxy_strategy` | string | `"auto"` | `auto`, `basic`, `premium`, see below |
 | `output` | string[] | `["html"]` | see output table; must be a list, not a bare string |
 | `only_main_content` | bool | `true` | strip nav/footer/ads from cleaned outputs |
 | `geolocation` | string | — | fetch as a visitor from this 2-letter ISO country, e.g. `"US"` |
@@ -58,7 +58,6 @@ Synchronous. Returns `200` with the page, or an error status. Server-side budget
 
 - `auto` (default): start cheap and escalate only as far as the site requires.
 - `basic`: the cheapest tier only. Good for open sites; fails rather than escalating.
-- `enhanced`: a stronger tier from the first attempt.
 - `premium`: the strongest and most expensive tier from the first attempt.
 
 ### Output formats
