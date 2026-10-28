@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-pline",
-	"version": "0.1.1",
+	"version": "0.3.10",
 	"description": "n8n community node for the Pline API: scrape pages, batch-scrape URL lists, crawl sites, map a site's URLs, and search the web.",
 	"license": "MIT",
 	"homepage": "https://github.com/grepsr/pline-api/tree/main/n8n-pline#readme",
