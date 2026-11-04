@@ -282,7 +282,22 @@ async fn icon() -> impl IntoResponse {
 async fn landing() -> impl IntoResponse {
     (
         [(header::CONTENT_TYPE, "text/html; charset=utf-8")],
-        r#"<!doctype html><html><head><meta charset="utf-8"><title>pline.ai MCP server</title><link rel="icon" type="image/png" href="/favicon.png"><link rel="apple-touch-icon" href="/favicon.png"></head><body><p>pline.ai MCP server. Connect an MCP client to <code>/mcp</code>. Docs: <a href="https://github.com/grepsr/pline-api#readme">github.com/grepsr/pline-api</a></p></body></html>"#,
+        r#"<!doctype html><html><head><meta charset="utf-8"><title>pline.ai MCP server</title><link rel="icon" type="image/png" href="/favicon.png"><link rel="apple-touch-icon" href="/favicon.png"></head><body><p>pline.ai MCP server. Connect an MCP client to <code>/mcp</code>. OpenAPI: <a href="/openapi.json">/openapi.json</a>. Docs: <a href="https://github.com/grepsr/pline-api#readme">github.com/grepsr/pline-api</a></p></body></html>"#,
+    )
+}
+
+/// The OpenAPI 3.1 description of this server, public so directories and API tools can read it.
+async fn openapi_document() -> impl IntoResponse {
+    let public_url = std::env::var("PLINE_MCP_PUBLIC_URL")
+        .ok()
+        .filter(|url| !url.trim().is_empty())
+        .unwrap_or_else(|| "https://mcp.pline.ai".to_string());
+    (
+        [
+            (header::ACCESS_CONTROL_ALLOW_ORIGIN, "*"),
+            (header::CACHE_CONTROL, "public, max-age=3600"),
+        ],
+        Json(crate::openapi::document(&public_url)),
     )
 }
 
@@ -359,6 +374,7 @@ pub async fn serve(mut server: PlineServer, addr: &str) -> anyhow::Result<()> {
             get(oauth_resource_metadata),
         )
         .route("/health", get(health))
+        .route("/openapi.json", get(openapi_document))
         .route("/favicon.ico", get(icon))
         .route("/favicon.png", get(icon))
         .route("/", get(landing));

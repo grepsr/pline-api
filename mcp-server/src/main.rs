@@ -3,6 +3,7 @@
 
 mod client;
 mod http_server;
+mod openapi;
 
 use std::collections::HashMap;
 use std::sync::Arc;

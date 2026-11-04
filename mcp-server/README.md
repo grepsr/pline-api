@@ -207,7 +207,8 @@ PLINE_BASE_URL=https://apix.pline.ai/v1 \
   ./mcp-server/target/release/pline-mcp --http 127.0.0.1:8080
 ```
 
-`/health` reports liveness. `/mcp` accepts the caller's API key through `Authorization: Bearer` or
+`/health` reports liveness. `/openapi.json` serves a public OpenAPI 3.1 description of the server,
+generated from the live tool list. `/mcp` accepts the caller's API key through `Authorization: Bearer` or
 `x-api-key`; the legacy `/<key>/mcp` route also exists, but puts credentials in URLs and access logs.
 The server forwards each caller's key rather than using the stdio environment key. A Supabase OAuth
 access token is also accepted when the platform and OAuth environment variables are configured. The
