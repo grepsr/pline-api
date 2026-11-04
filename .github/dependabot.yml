@@ -31,3 +31,7 @@ updates:
     groups:
       n8n:
         patterns: ['*']
+    ignore:
+      # n8n's node tooling (typescript-eslint, the node-cli templates) supports TypeScript 5 only.
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
