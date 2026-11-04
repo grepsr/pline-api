@@ -24,3 +24,10 @@ updates:
       - dependency-name: "@pline/api-linux-arm64"
       - dependency-name: "@pline/api-linux-x64"
       - dependency-name: "@pline/api-win32-x64"
+  - package-ecosystem: npm
+    directory: /n8n-pline
+    schedule:
+      interval: weekly
+    groups:
+      n8n:
+        patterns: ['*']
